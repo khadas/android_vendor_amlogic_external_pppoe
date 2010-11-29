@@ -1,0 +1,3 @@
+---- ntfs_fuse_open Æ¥Åä (2 ÔÚ 0 ÎÄ¼ş ) ----
+Ntfs-3g.c (src):static int ntfs_fuse_open(const char *org_path,
+Ntfs-3g.c (src):	.open		= ntfs_fuse_open,
