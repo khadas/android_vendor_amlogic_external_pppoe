@@ -41,7 +41,9 @@
 #define HAVE_DUP2 1
 
 /* Define to 1 if you have the <endian.h> header file. */
+#ifndef HAVE_ENDIAN_H
 #define HAVE_ENDIAN_H 1
+#endif
 
 /* Define to 1 if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
@@ -332,6 +334,12 @@
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 64
+
+#ifndef _OFF_T_DEFINED_
+#define _OFF_T_DEFINED_
+//typedef		loff_t       off_t;
+#define off_t loff_t
+#endif
 
 /* Enable GNU extensions on systems that have them.  */
 #ifndef _GNU_SOURCE
