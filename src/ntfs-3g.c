@@ -470,7 +470,7 @@ static int ntfs_allowed_real_dir_access(struct SECURITY_CONTEXT *scx,
  */
 #if HAVE_SYS_STATVFS_H 
 static int ntfs_fuse_statfs(const char *path __attribute__((unused)),
-			    struct statvfs *sfs)
+			    struct statfs *sfs)
 {
 	s64 size;
 	int delta_bits;
@@ -516,10 +516,10 @@ static int ntfs_fuse_statfs(const char *path __attribute__((unused)),
 	size += vol->free_mft_records;
 	if (size < 0)
 		size = 0;
-	sfs->f_ffree = sfs->f_favail = size;
+	sfs->f_ffree = /*sfs->f_favail = */size;
 	
 	/* Maximum length of filenames. */
-	sfs->f_namemax = NTFS_MAX_NAME_LEN;
+	sfs->f_namelen = NTFS_MAX_NAME_LEN;
 	return 0;
 }
 #endif

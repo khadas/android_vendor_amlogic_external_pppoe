@@ -26,7 +26,7 @@
 #include <sys/stat.h>
 
 #if HAVE_SYS_STATVFS_H
-#include <sys/statvfs.h>
+#include <sys/statfs.h>
 #endif
 
 #ifdef __cplusplus
@@ -192,7 +192,7 @@ struct fuse_operations {
 	 */
 #if HAVE_SYS_STATVFS_H
 
-	int (*statfs) (const char *, struct statvfs *);
+	int (*statfs) (const char *, struct statfs *);
 
 #endif
 	/** Possibly flush cached data
@@ -581,7 +581,7 @@ int fuse_fs_flush(struct fuse_fs *fs, const char *path,
 		  struct fuse_file_info *fi);
 
 #if HAVE_SYS_STATVFS_H
-int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statvfs *buf);
+int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statfs *buf);
 #endif
 
 int fuse_fs_opendir(struct fuse_fs *fs, const char *path,

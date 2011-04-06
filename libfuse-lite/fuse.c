@@ -678,13 +678,13 @@ int fuse_fs_flush(struct fuse_fs *fs, const char *path,
 }
 
 #if HAVE_SYS_STATVFS_H
-int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statvfs *buf)
+int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statfs *buf)
 {
     fuse_get_context()->private_data = fs->user_data;
     if (fs->op.statfs)
         return fs->op.statfs(path, buf);
     else {
-        buf->f_namemax = 255;
+        buf->f_namelen = 255;
         buf->f_bsize = 512;
         return 0;
     }
@@ -1976,7 +1976,7 @@ static void fuse_lib_statfs(fuse_req_t req, fuse_ino_t ino)
     struct fuse *f = req_fuse_prepare(req);
 
 #if HAVE_SYS_STATVFS_H
-    struct statvfs buf;
+    struct statfs buf;
     char *path;
     int err;
 

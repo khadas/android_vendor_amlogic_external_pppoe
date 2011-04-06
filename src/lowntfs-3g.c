@@ -491,7 +491,7 @@ static void ntfs_fuse_statfs(fuse_req_t req,
 		size += vol->free_mft_records;
 		if (size < 0)
 			size = 0;
-		sfs.f_ffree = sfs.f_favail = size;
+		sfs.f_ffree = /*sfs.f_favail =*/ size;
 
 	/* Maximum length of filenames. */
 		sfs.f_namemax = NTFS_MAX_NAME_LEN;

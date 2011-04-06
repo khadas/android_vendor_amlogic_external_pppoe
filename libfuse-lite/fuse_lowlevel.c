@@ -249,7 +249,7 @@ size_t fuse_add_direntry(fuse_req_t req, char *buf, size_t bufsize,
 
 #if HAVE_SYS_STATVFS_H
 
-static void convert_statfs(const struct statvfs *stbuf,
+static void convert_statfs(const struct statfs *stbuf,
                            struct fuse_kstatfs *kstatfs)
 {
     kstatfs->bsize	= stbuf->f_bsize;
@@ -259,7 +259,7 @@ static void convert_statfs(const struct statvfs *stbuf,
     kstatfs->bavail	= stbuf->f_bavail;
     kstatfs->files	= stbuf->f_files;
     kstatfs->ffree	= stbuf->f_ffree;
-    kstatfs->namelen	= stbuf->f_namemax;
+    kstatfs->namelen	= stbuf->f_namelen;
 }
 #endif
 
@@ -418,7 +418,7 @@ int fuse_reply_buf(fuse_req_t req, const char *buf, size_t size)
 
 #if HAVE_SYS_STATVFS_H
 
-int fuse_reply_statfs(fuse_req_t req, const struct statvfs *stbuf)
+int fuse_reply_statfs(fuse_req_t req, const struct statfs *stbuf)
 {
     struct fuse_statfs_out arg;
     size_t size = req->f->conn.proto_minor < 4 ? FUSE_COMPAT_STATFS_SIZE : sizeof(arg);
@@ -825,8 +825,8 @@ static void do_statfs(fuse_req_t req, fuse_ino_t nodeid, const void *inarg)
         req->f->op.statfs(req, nodeid);
     else {
 #if HAVE_SYS_STATVFS_H		
-        struct statvfs buf = {
-            .f_namemax = 255,
+        struct statfs buf = {
+            .f_namelen = 255,
             .f_bsize = 512,
         };
         fuse_reply_statfs(req, &buf);

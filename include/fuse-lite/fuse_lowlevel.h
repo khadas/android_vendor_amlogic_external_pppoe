@@ -26,7 +26,7 @@
 
 #if HAVE_SYS_STATVFS_H
 
-#include <sys/statvfs.h>
+#include <sys/statfs.h>
 #endif
 
 #include <sys/uio.h>
@@ -961,7 +961,7 @@ int fuse_reply_iov(fuse_req_t req, const struct iovec *iov, int count);
  * @return zero for success, -errno for failure to send reply
  */
 #if HAVE_SYS_STATVFS_H 
-int fuse_reply_statfs(fuse_req_t req, const struct statvfs *stbuf);
+int fuse_reply_statfs(fuse_req_t req, const struct statfs *stbuf);
 #endif
 
 
