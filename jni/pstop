@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-PPPOE_PIDFILE="/var/run/pppoe.pid"
+PPPOE_PIDFILE="/system/etc/ppp/pppoe.pid"
 
 # Check for pidfile
     PPPOE_PID=`cat $PPPOE_PIDFILE`

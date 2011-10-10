@@ -664,6 +664,7 @@ main(int argc, char *argv[])
     signal(SIGTERM, SIG_IGN);
     signal(SIGINT, SIG_IGN);
     signal(SIGHUP, sigPADT);
+    signal(SIGKILL, sigPADT);
     session(&conn);
     return 0;
 }

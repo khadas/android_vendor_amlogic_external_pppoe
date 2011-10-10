@@ -33,6 +33,12 @@ int main(int argc, char *argv[])
     int i;
     struct pppoe_ctrl * ctrl;
     
+    if (argc < 2 || (0 != strcmp( "connect", argv[1]) &&
+                     0 != strcmp( "disconnect", argv[1])  )) {
+        usage();
+        return -2;
+    }
+    
     ctrl = pppoe_ctrl_open("/dev/socket/pppd");
 	if (ctrl == NULL) {
     	printf("Failed to connect to pppd\n");
@@ -45,11 +51,9 @@ int main(int argc, char *argv[])
 
     }
     else if (0 == strcmp( "disconnect", argv[1])) {
+        sprintf(pppd_connect_cmd, "ppp-stop");    
     }
-    else {
-        usage();
-        return -2;
-    }
+
 
     pppoe_ctrl_request(ctrl, pppd_connect_cmd, strlen(pppd_connect_cmd));
 

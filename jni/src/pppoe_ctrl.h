@@ -1,7 +1,9 @@
 #ifndef PPPOE_CTRL_H
 #define PPPOE_CTRL_H
 
-#define PPPOE_PIDFILE "/data/misc/ppp/pppoe.pid"
+
+#define PPPOE_PIDFILE "/system/etc/ppp/pppoe.pid"
+
 
 struct pppoe_ctrl {
 	int s;
