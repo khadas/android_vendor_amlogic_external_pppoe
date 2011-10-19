@@ -47,7 +47,8 @@ static char pppoe_disconnect_cmd[512] = {"ppp-stop"};
 
 static char pppoe_plugin_cmd[PPPOE_PLUGIN_CMD_LEN_MAX];
 
-static char pppd_options[] = {"debug logfd 1 noipdefault noauth default-asyncmap defaultroute nodetach mtu 1492 mru 1492 noaccomp nodeflate nopcomp novj novjccomp lcp-echo-interval 20 lcp-echo-failure 3"};
+#define PPPD_OPTIONS_LEN 512
+static char pppd_options[PPPD_OPTIONS_LEN + 1] = {"debug logfd 1 noipdefault noauth default-asyncmap defaultroute show-password nodetach mtu 1492 mru 1492 noaccomp nodeflate nopcomp novj usepeerdns novjccomp lcp-echo-interval 20 lcp-echo-failure 3"};
 
 
 
@@ -79,6 +80,35 @@ static char* create_pppoe_connect_cmd
     return pppoe_connect_cmd;
 }
 
+#define CONFIG_FILE  "/system/etc/ppp/pppd_options.conf"
+
+
+
+/* Handy routine to read very long lines in text files.
+ * This means we read the whole line and avoid any nasty buffer overflows. */
+static ssize_t get_line(char **line, size_t *len, FILE *fp)
+{
+	char *p;
+	size_t last = 0;
+
+	while(!feof(fp)) {
+		if (*line == NULL || last != 0) {
+			*len += BUFSIZ;
+			*line = (char*)realloc(*line, *len);
+		}
+		p = *line + last;
+		memset(p, 0, BUFSIZ);
+		if (fgets(p, BUFSIZ, fp) == NULL)
+			break;
+		last += strlen(p);
+		if (last && (*line)[last - 1] == '\n') {
+			(*line)[last - 1] = '\0';
+			break;
+		}
+	}
+	return last;
+}
+
 
 static jboolean com_amlogic_PppoeOperation_connect
 (JNIEnv *env, jobject obj, jstring jstr_account, jstring jstr_passwd)
@@ -88,6 +118,23 @@ static jboolean com_amlogic_PppoeOperation_connect
     struct pppoe_ctrl * ctrl;
     char *p;
 
+	FILE *f;
+	f = fopen(CONFIG_FILE, "r");
+    __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"Try Open %s", CONFIG_FILE);
+
+	if (f) {
+    	char *line, *option, *p, *buffer = NULL;
+    	size_t len = 0;
+
+        get_line(&buffer, &len, f);
+        __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"get_line: [%s]", buffer);
+        if (buffer){
+            strncpy(pppd_options, buffer, sizeof(pppd_options) - 1);
+            free(buffer);
+        }
+        fclose(f);
+    }
+    
     p_user = (char *)env->GetStringUTFChars(jstr_account, NULL);
     p_passwd = (char *)env->GetStringUTFChars(jstr_passwd, NULL);
 

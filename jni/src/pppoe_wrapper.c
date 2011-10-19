@@ -78,10 +78,28 @@ static int ppp_stop()
         return -1;
     }
 
+    /*
+    The signals SIGKILL and SIGSTOP cannot 
+    be caught, blocked, or ignored.
+    So send SIGUSR1 to notify pppoe to send PADT.
+    */
+    ret = kill(pid, SIGUSR1);
+    __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+        "Send SIGUSR1 to pid(#%d), ret = %d\n", pid, ret );
+
+    /*
+    If no sleep before send SIGKILL, pppoe will just being killed
+    rather than sending PADT.
+    */
+    __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+        "sleep before send SIGKILL to pid(#%d)\n", pid );
+    
+    sleep(5);
+
     ret = kill(pid, SIGKILL);
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
         "Send SIGKILL to pid(#%d), ret = %d\n", pid, ret );
-    
+
 	unlink(PPPOE_PIDFILE);
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
         "removed %s\n", PPPOE_PIDFILE );

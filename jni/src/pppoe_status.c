@@ -31,7 +31,7 @@ static int if_is_up(const char *if_name)
 
     s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0) {
-        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"if_is_up(%s): failed to create socket\n", if_name);
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"if_is_up(%s): failed to create socket(%s)\n", if_name, strerror(errno));
 
         return -1;
     }
@@ -39,7 +39,7 @@ static int if_is_up(const char *if_name)
     if (ret < 0) {
         ret = -errno;
         //perror(ifr.ifr_name);
-        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"if_is_up(%s): failed to ioctl()\n", if_name);        
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"if_is_up(%s): failed to ioctl(%s)\n", if_name, strerror(errno));        
         goto done;
     }
 

@@ -337,10 +337,10 @@ session(PPPoEConnection *conn)
 static void
 sigPADT(int src)
 {
-  syslog(LOG_DEBUG,"Received signal %d on session %d.",
+  syslog(LOG_INFO,"Received signal %d on session %d.",
 	 (int)src, (int) ntohs(Connection->session));
   sendPADTf(Connection, "RP-PPPoE: Received signal %d", src);
-  exit(EXIT_SUCCESS);
+  //exit(EXIT_SUCCESS);
 }
 
 /**********************************************************************
@@ -664,7 +664,8 @@ main(int argc, char *argv[])
     signal(SIGTERM, SIG_IGN);
     signal(SIGINT, SIG_IGN);
     signal(SIGHUP, sigPADT);
-    signal(SIGKILL, sigPADT);
+    signal(SIGUSR1, sigPADT);
+
     session(&conn);
     return 0;
 }
