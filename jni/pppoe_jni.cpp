@@ -56,7 +56,7 @@ static char* create_pppoe_plugin_cmd(char *pid_file, char *ether_if)
 {
     int len;
     len = snprintf(pppoe_plugin_cmd, PPPOE_PLUGIN_CMD_LEN_MAX, 
-                   "'pppoe -p %s -I %s -T 80 - U -m 1412'", 
+                   "'pppoe -p %s -I %s -T 80 -U -m 1412'", 
                    pid_file, ether_if);
     if ( len < 0 || len >= PPPOE_PLUGIN_CMD_LEN_MAX ) {
         return NULL;
