@@ -111,8 +111,8 @@ static int ppp_stop()
 int main(int argc, char * argv[])
 {
     int socket_fd;
-    struct sockaddr_un name;
-    int i, len;
+    struct sockaddr_un cli_addr, serv_addr;
+    int i, len, clilen = 0;
     int ppp_cmd_len;
     
     socket_fd = socket(PF_UNIX, SOCK_DGRAM, 0);
@@ -122,15 +122,15 @@ int main(int argc, char * argv[])
         exit(-1);
     }
 
-	memset(&name,0,sizeof(name));
+	memset(&serv_addr,0,sizeof(serv_addr));
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
         "create AF_UNIX socket:%d OK\n",socket_fd);
 
 	unlink("/dev/socket/pppd");
-	name.sun_family = AF_UNIX;
-	strncpy(name.sun_path, "/dev/socket/pppd", sizeof(name.sun_path) - 1);
+	serv_addr.sun_family = AF_UNIX;
+	strncpy(serv_addr.sun_path, "/dev/socket/pppd", sizeof(serv_addr.sun_path) - 1);
 
-	if (bind(socket_fd, (struct sockaddr *)&name,  sizeof(struct sockaddr_un)) < 0) {
+	if (bind(socket_fd, (struct sockaddr *)&serv_addr,  sizeof(struct sockaddr_un)) < 0) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
             "failed to bind socket(%s)\n", strerror(errno));
 		exit(-1);
@@ -140,6 +140,7 @@ int main(int argc, char * argv[])
 	struct timeval tv;
 	int res;
 	fd_set rfds;
+    char *cmd;
 
 	for (;;) {
 		tv.tv_sec = 10;
@@ -147,19 +148,55 @@ int main(int argc, char * argv[])
 		FD_ZERO(&rfds);
 		FD_SET(socket_fd, &rfds);
 		res = select(socket_fd + 1, &rfds, NULL, NULL, &tv);
-		if (FD_ISSET(socket_fd, &rfds)) {
-			res = recv(socket_fd, ppp_cmd, PPP_CMD_LEN_MAX-1, 0);
-			if (res < 0)
+		if (res > 0 && FD_ISSET(socket_fd, &rfds)) {
+            clilen = sizeof (struct sockaddr_un);
+			res = recvfrom(socket_fd, ppp_cmd, PPP_CMD_LEN_MAX-1, 0,
+                            (struct sockaddr *)&cli_addr,&clilen);
+			if (res < 0) {
+                __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+                    "FAILED TO RECVFROM\n");
+               
 				return res;
+			}
+            
+            __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+                "client: [%s][%d]\n",
+                cli_addr.sun_path, clilen);
+            
             ppp_cmd[res] = '\0';
 			ppp_cmd_len = res;
+
+            cmd = strchr(ppp_cmd, '\t');
+            if (!cmd) {
+                __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+                    "recv invalid cmd(No TAB found): [%s]\n",ppp_cmd);
+                continue;
+            }
+            cmd++;
+            
+            cmd = strchr(cmd, '\t');
+            if (!cmd) {
+                __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+                    "recv invalid cmd(Second TAB NOT found): [%s]\n",ppp_cmd);
+                continue;
+            }
+            cmd++;
+            
+        	if (sendto(socket_fd, ppp_cmd, cmd - ppp_cmd, 0,
+                        (struct sockaddr *)&cli_addr, clilen) < 0) {
+        		__android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"failed to send ACK(%s)\n", strerror(errno));
+        		continue;
+        	}
+
             __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
-                "recv cmd: [%s]\n",ppp_cmd);
-            if ( 0 == strcmp(ppp_cmd, "ppp-stop") ) {
+                "recv cmd: [%s]\n",cmd);
+            
+            
+            if ( 0 == strcmp(cmd, "ppp-stop") ) {
                 ppp_stop();
             }
             else {
-                system(ppp_cmd);
+                system(cmd);
             }
 		}
 	}

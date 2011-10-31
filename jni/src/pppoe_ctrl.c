@@ -12,16 +12,17 @@
 #include <netinet/in.h>
 
 #include <sys/un.h>
+#include <sys/stat.h>
 #include <android/log.h>
 #include "pppoe_ctrl.h"
 
 
 #define LOCAL_TAG "PPPOE_CTRL"
+#define TMPDIR  "/etc/ppp"
 
 struct pppoe_ctrl * pppoe_ctrl_open(const char *ctrl_path)
 {
 	struct pppoe_ctrl *ctrl;
-	static int counter = 0;
 	int ret;
 	size_t res;
 	int tries = 0;
@@ -40,10 +41,10 @@ struct pppoe_ctrl * pppoe_ctrl_open(const char *ctrl_path)
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"%s(ctrl->s = %d)\n", __FUNCTION__, ctrl->s);
 
 	ctrl->local.sun_family = AF_UNIX;
-	counter++;
+
 try_again:
 	ret = snprintf(ctrl->local.sun_path, sizeof(ctrl->local.sun_path),
-			  "/dev/socket/ppp_cli-%d", getpid());
+			  "%s/ppp_cli-%d", TMPDIR, getpid());
 
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"%s: ctrl->local.sun_path: %s\n", __FUNCTION__, ctrl->local.sun_path);
 	if (ret < 0 || (size_t) ret >= sizeof(ctrl->local.sun_path)) {
@@ -54,7 +55,7 @@ try_again:
 	tries++;
 	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
 		    sizeof(ctrl->local)) < 0) {
-#if 0		    
+#if 1		    
 		if (errno == EADDRINUSE && tries < 2) {
 			/*
 			 * getpid() returns unique identifier for this instance
@@ -63,6 +64,7 @@ try_again:
 			 * Remove the file and try again.
 			 */
 			unlink(ctrl->local.sun_path);
+            		__android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"%s: bind failed(%s)\n", __FUNCTION__, strerror(errno));
 			goto try_again;
 		}
         
@@ -107,17 +109,74 @@ void pppoe_ctrl_close(struct pppoe_ctrl *ctrl)
 	free(ctrl);
 }
 
+#define REQUEST_BUF_LEN 1024
+#define ACK_BUF_LEN 128
+#define RESEND_CNT_MAX 10
+
+static char request_buf[REQUEST_BUF_LEN];
+static char ack_buf[ACK_BUF_LEN];
+static int  req_no = 0;
 
 
 int pppoe_ctrl_request(struct pppoe_ctrl *ctrl, const char *cmd, size_t cmd_len)
-{
-	if (send(ctrl->s, cmd, cmd_len, 0) < 0) {
-		__android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"send command[%s] failed\n", cmd);
-		return -1;
-	}
+{   
+    int nwritten = -1;
+    int acked = 0;
+    fd_set rfds;
+    struct timeval tv;
+    int res;
+    int pid_and_reqno_len =0;
+    int resend_cnt = 0;
+    
+    do {
+        request_buf[0] = 0;
+        nwritten = sprintf(request_buf, "%d\t", getpid());
+        nwritten += sprintf(request_buf + nwritten, "%d\t", req_no++);
+        pid_and_reqno_len = nwritten;
+        nwritten += sprintf(request_buf + nwritten, "%s", cmd);
 
-	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"send command[%s] OK\n", cmd);
-	return 0;
+    	if (send(ctrl->s, request_buf, nwritten, 0) < 0) {
+    		__android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"send command[%s] failed(%s)\n", cmd, strerror(errno));
+    		goto exit_func;
+    	}
+
+        resend_cnt++;
+
+		tv.tv_sec = 10;
+		tv.tv_usec = 0;
+		FD_ZERO(&rfds);
+		FD_SET(ctrl->s, &rfds);
+		res = select(ctrl->s + 1, &rfds, NULL, NULL, &tv);
+        if ( res < 0 ) {
+        	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"failed to select(%s)\n", strerror(errno));
+            goto exit_func;
+        } else if ( 0 == res ){
+        	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"Timeout to recv ack, resend request\n");        
+            continue;            
+        }else if (FD_ISSET(ctrl->s, &rfds)) {
+			res = recv(ctrl->s, ack_buf, ACK_BUF_LEN-1, 0);
+			if (res < 0) {
+            	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"failed to recv ack(%s)\n", strerror(errno));
+                goto exit_func;
+			}
+
+            if (0 == strncmp(ack_buf, request_buf,pid_and_reqno_len)) {
+            	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"recved VALID ack\n");
+                acked = 1;                
+            }
+            else {
+            	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"recved INVALID ack: pid_and_reqno_len(%d)\n", pid_and_reqno_len);
+                ack_buf[pid_and_reqno_len] = 0;
+                request_buf[pid_and_reqno_len] = 0;
+            	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"ack_buf[%s]\n", ack_buf);
+            	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"request_buf[%s]\n", request_buf);                
+            }
+		}
+    }while(!acked && resend_cnt < RESEND_CNT_MAX);
+
+exit_func:
+	__android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"send command[%s] %s\n", cmd, acked ? "OK" : "failed");
+	return acked ? 0 : -1;
 }
 
 
