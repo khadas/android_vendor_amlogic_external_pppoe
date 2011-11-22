@@ -2,7 +2,9 @@
 #define LOCAL_TAG "PPPOE_JNI"
 
 
-//$as/dalvik/libnativehelper/include/nativehelper/jni.h
+/*
+dalvik/libnativehelper/include/nativehelper/jni.h
+*/
 #include <jni.h>
 
 #include <JNIHelp.h>
@@ -19,7 +21,7 @@
 #include <netinet/in.h>
 
 #include <sys/un.h>
-#include "pppoe_ctrl.h"
+#include <netwrapper.h> 
 #include "pppoe_status.h"
 #include <android/log.h>
 
@@ -115,7 +117,7 @@ static jboolean com_amlogic_PppoeOperation_connect
 {
     char *p_user; 
     char *p_passwd;
-    struct pppoe_ctrl * ctrl;
+    struct netwrapper_ctrl * ctrl;
     char *p;
 
 	FILE *f;
@@ -157,15 +159,15 @@ static jboolean com_amlogic_PppoeOperation_connect
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.connect\n");
 
-    ctrl = pppoe_ctrl_open("/dev/socket/pppd");
+    ctrl = netwrapper_ctrl_open("/etc/ppp/pppoe", PPPOE_WRAPPER_SERVER_PATH);
     if (ctrl == NULL) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
         return -1;
     }
 
-    pppoe_ctrl_request(ctrl, pppoe_connect_cmd, strlen(pppoe_connect_cmd));
+    netwrapper_ctrl_request(ctrl, pppoe_connect_cmd, strlen(pppoe_connect_cmd));
 
-    pppoe_ctrl_close(ctrl);
+    netwrapper_ctrl_close(ctrl);
 
     env->ReleaseStringUTFChars(jstr_account, p_user);
     env->ReleaseStringUTFChars(jstr_passwd, p_passwd);
@@ -178,19 +180,19 @@ static jboolean com_amlogic_PppoeOperation_connect
 jboolean com_amlogic_PppoeOperation_disconnect
 (JNIEnv *env, jobject obj)
 {
-    struct pppoe_ctrl * ctrl;
+    struct netwrapper_ctrl * ctrl;
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.disconnect\n");
 
-    ctrl = pppoe_ctrl_open("/dev/socket/pppd");
+    ctrl = netwrapper_ctrl_open("/etc/ppp/pppoe", PPPOE_WRAPPER_SERVER_PATH);
     if (ctrl == NULL) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
         return -1;
     }
 
-    pppoe_ctrl_request(ctrl, pppoe_disconnect_cmd, strlen(pppoe_disconnect_cmd));
+    netwrapper_ctrl_request(ctrl, pppoe_disconnect_cmd, strlen(pppoe_disconnect_cmd));
 
-    pppoe_ctrl_close(ctrl);
+    netwrapper_ctrl_close(ctrl);
 
     return 1;
 }

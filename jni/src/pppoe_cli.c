@@ -12,8 +12,9 @@
 #include <netinet/in.h>
 
 #include <sys/un.h>
-#include "pppoe_ctrl.h"
+#include <netwrapper.h> 
 
+#include "pppoe_status.h"
 
 static char pppd_connect_cmd[512];
 static char pppoe_plugin_cmd[] = {"'pppoe -p /system/etc/ppp/pppoe.pid -I eth0 -T 80 -U -m 1412'" };
@@ -31,7 +32,7 @@ static int usage()
 int main(int argc, char *argv[])
 {
     int i;
-    struct pppoe_ctrl * ctrl;
+    struct netwrapper_ctrl * ctrl;
     
     if (argc < 2 || (0 != strcmp( "connect", argv[1]) &&
                      0 != strcmp( "disconnect", argv[1])  )) {
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
         return -2;
     }
     
-    ctrl = pppoe_ctrl_open("/dev/socket/pppd");
+    ctrl = netwrapper_ctrl_open("/etc/ppp/pppcli", PPPOE_WRAPPER_SERVER_PATH);
 	if (ctrl == NULL) {
     	printf("Failed to connect to pppd\n");
     	return -1;
@@ -55,8 +56,8 @@ int main(int argc, char *argv[])
     }
 
 
-    pppoe_ctrl_request(ctrl, pppd_connect_cmd, strlen(pppd_connect_cmd));
+    netwrapper_ctrl_request(ctrl, pppd_connect_cmd, strlen(pppd_connect_cmd));
 
-    pppoe_ctrl_close(ctrl);
+    netwrapper_ctrl_close(ctrl);
     exit(0);
 }

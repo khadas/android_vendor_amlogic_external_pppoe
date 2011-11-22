@@ -5,6 +5,9 @@
 #define PPP_STATUS_DISCONNECTED  0x20
 #define PPP_STATUS_CONNECTING  0x40
 
+#define PPPOE_PIDFILE "/system/etc/ppp/pppoe.pid"
+#define PPPOE_WRAPPER_SERVER_PATH "/dev/socket/pppoe_wrapper"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

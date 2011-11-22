@@ -35,12 +35,11 @@ LOCAL_CFLAGS := -DVERSION=$(PPPOE_VERSION)
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES:= jni/src/pppoe_ctrl.c\
-        jni/src/pppoe_status.c \
+LOCAL_SRC_FILES:= jni/src/pppoe_status.c \
         jni/pppoe_jni.cpp
 
 LOCAL_SHARED_LIBRARIES := libandroid_runtime   libnativehelper
-LOCAL_SHARED_LIBRARIES += libc libcutils
+LOCAL_SHARED_LIBRARIES += libc libcutils libnetutils 
 LOCAL_C_INCLUDES :=  $(JNI_H_INCLUDE) $(LOCAL_PATH)/jni/src
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libpppoejni
@@ -49,21 +48,17 @@ include $(BUILD_SHARED_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES:= jni/src/pppoe_cli.c\
-        jni/src/pppoe_ctrl.c
+LOCAL_SRC_FILES:= jni/src/pppoe_cli.c
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := pcli
-LOCAL_CFLAGS += -O2
-LOCAL_LDLIBS += -llog
-LOCAL_SHARED_LIBRARIES := libcutils
+LOCAL_SHARED_LIBRARIES := libcutils libnetutils 
 include $(BUILD_EXECUTABLE)
-
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= jni/src/pppoe_wrapper.c
 
 LOCAL_SHARED_LIBRARIES := \
-        libcutils libcrypto
+        libcutils libcrypto libnetutils 
 
 LOCAL_C_INCLUDES := \
         $(LOCAL_PATH)/include
