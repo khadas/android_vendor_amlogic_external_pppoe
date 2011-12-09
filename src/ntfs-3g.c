@@ -4459,3 +4459,8 @@ err2:
 	free(opts.device);
 	return err;
 }
+
+void dummy(void)
+{
+	raise(0);
+}

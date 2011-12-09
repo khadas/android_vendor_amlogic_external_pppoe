@@ -66,8 +66,8 @@
 #ifdef __USE_FILE_OFFSET64
 #include <unistd.h>
 #define  lseek   lseek64
-#define  pread  __pread64
-#define  pwrite  __pwrite64
+#define  pread  pread64
+#define  pwrite pwrite64
 #define  fcntl  __fcntl64
 #endif
 
