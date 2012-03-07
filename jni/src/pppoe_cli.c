@@ -17,7 +17,7 @@
 #include "pppoe_status.h"
 
 static char pppd_connect_cmd[512];
-static char pppoe_plugin_cmd[] = {"'pppoe -p /system/etc/ppp/pppoe.pid -I eth0 -T 80 -U -m 1412'" };
+static char pppoe_plugin_cmd[] = {"'pppoe -p " _ROOT_PATH "/etc/ppp/pppoe.pid" " -I eth0 -T 80 -U -m 1412'" };
 static char pppd_options[] = {"debug logfd 1 noipdefault noauth default-asyncmap defaultroute nodetach mtu 1492 mru 1492 noaccomp nodeflate nopcomp novj novjccomp lcp-echo-interval 20 lcp-echo-failure 3"};
 
 static int usage()
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
         return -2;
     }
     
-    ctrl = netwrapper_ctrl_open("/etc/ppp/pppcli", PPPOE_WRAPPER_SERVER_PATH);
+    ctrl = netwrapper_ctrl_open(_ROOT_PATH "/etc/ppp/pppcli", PPPOE_WRAPPER_SERVER_PATH);
 	if (ctrl == NULL) {
     	printf("Failed to connect to pppd\n");
     	return -1;

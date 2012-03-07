@@ -82,7 +82,8 @@ static char* create_pppoe_connect_cmd
     return pppoe_connect_cmd;
 }
 
-#define CONFIG_FILE  "/system/etc/ppp/pppd_options.conf"
+#include "../../ppp/pppd/pathnames.h"
+#define CONFIG_FILE  _ROOT_PATH "/etc/ppp/pppd_options.conf"
 
 
 
@@ -159,7 +160,7 @@ static jboolean com_amlogic_PppoeOperation_connect
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.connect\n");
 
-    ctrl = netwrapper_ctrl_open("/etc/ppp/pppoe", PPPOE_WRAPPER_SERVER_PATH);
+    ctrl = netwrapper_ctrl_open(PPPOE_WRAPPER_CLIENT_PATH, PPPOE_WRAPPER_SERVER_PATH);
     if (ctrl == NULL) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
         return -1;
@@ -184,7 +185,7 @@ jboolean com_amlogic_PppoeOperation_disconnect
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.disconnect\n");
 
-    ctrl = netwrapper_ctrl_open("/etc/ppp/pppoe", PPPOE_WRAPPER_SERVER_PATH);
+    ctrl = netwrapper_ctrl_open(PPPOE_WRAPPER_CLIENT_PATH, PPPOE_WRAPPER_SERVER_PATH);
     if (ctrl == NULL) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
         return -1;
