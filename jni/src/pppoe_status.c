@@ -54,14 +54,14 @@ done:
 
 #define PPP_IF_NAME "ppp0"
 
-int get_pppoe_status( const char *ether_if_name)
+int get_pppoe_status( const char *phy_if_name)
 {
     int ret;
 
-    ret = if_is_up(ether_if_name);
+    ret = if_is_up(phy_if_name);
     if (ret < 0){
-        if ( ENODEV == -ret  )
-            PRINTF( "No such device(%s)\n", ether_if_name );
+        if ( ENODEV == -ret )
+            PRINTF( "No such device(%s)\n", phy_if_name );
 
         PRINTF("ppp_status: DISCONNECTED\n");
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
@@ -71,7 +71,7 @@ int get_pppoe_status( const char *ether_if_name)
     }
 
     if (0 == ret ) {
-        PRINTF( "%s is DOWN\n", ether_if_name );
+        PRINTF( "%s is DOWN\n", phy_if_name );
 
         PRINTF("ppp_status: DISCONNECTED\n");
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
@@ -103,8 +103,6 @@ int get_pppoe_status( const char *ether_if_name)
                             "ppp_status: CONNECTED\n");        
         return PPP_STATUS_CONNECTED;
     }
-    
-    
 }
 
 /*

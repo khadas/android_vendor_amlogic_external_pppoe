@@ -25,6 +25,8 @@ dalvik/libnativehelper/include/nativehelper/jni.h
 #include "pppoe_status.h"
 #include <android/log.h>
 
+#include "cutils/properties.h"
+
 #define PPPOE_PLUGIN_CMD_LEN_MAX 256
 #define PPPOE_CONNECT_CMD_LEN_MAX 512
 
@@ -40,7 +42,7 @@ struct fields_t {
 
 static struct fields_t fields;
 
-extern int get_pppoe_status( const char *ether_if_name);
+extern int get_pppoe_status( const char *phy_if_name);
 
 static char pppoe_connect_cmd[PPPOE_CONNECT_CMD_LEN_MAX];
 
@@ -54,12 +56,12 @@ static char pppd_options[PPPD_OPTIONS_LEN + 1] = {"debug logfd 1 noipdefault noa
 
 
 
-static char* create_pppoe_plugin_cmd(char *pid_file, char *ether_if)
+static char* create_pppoe_plugin_cmd(char *pid_file, char *phy_if)
 {
     int len;
     len = snprintf(pppoe_plugin_cmd, PPPOE_PLUGIN_CMD_LEN_MAX, 
                    "'pppoe -p %s -I %s -T 80 -U -m 1412'", 
-                   pid_file, ether_if);
+                   pid_file, phy_if);
     if ( len < 0 || len >= PPPOE_PLUGIN_CMD_LEN_MAX ) {
         return NULL;
     }
@@ -112,10 +114,12 @@ static ssize_t get_line(char **line, size_t *len, FILE *fp)
 	return last;
 }
 
+static const char PPPOE_PHY_IF_PROP_NAME[]    = "net.pppoe.phyif";
 
 static jboolean com_amlogic_PppoeOperation_connect
-(JNIEnv *env, jobject obj, jstring jstr_account, jstring jstr_passwd)
+(JNIEnv *env, jobject obj, jstring jstr_if_name, jstring jstr_account, jstring jstr_passwd)
 {
+    char *p_ifname;
     char *p_user; 
     char *p_passwd;
     struct netwrapper_ctrl * ctrl;
@@ -138,10 +142,13 @@ static jboolean com_amlogic_PppoeOperation_connect
         fclose(f);
     }
     
+    p_ifname = (char *)env->GetStringUTFChars(jstr_if_name, NULL);
     p_user = (char *)env->GetStringUTFChars(jstr_account, NULL);
     p_passwd = (char *)env->GetStringUTFChars(jstr_passwd, NULL);
 
-    p = create_pppoe_plugin_cmd((char*)PPPOE_PIDFILE, (char*)"eth0");
+    property_set(PPPOE_PHY_IF_PROP_NAME, p_ifname);
+
+    p = create_pppoe_plugin_cmd((char*)PPPOE_PIDFILE, p_ifname);
     if (!p) {
         __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"failed to create plug_in command\n");
         return -1;
@@ -170,6 +177,7 @@ static jboolean com_amlogic_PppoeOperation_connect
 
     netwrapper_ctrl_close(ctrl);
 
+    env->ReleaseStringUTFChars(jstr_if_name, p_ifname);
     env->ReleaseStringUTFChars(jstr_account, p_user);
     env->ReleaseStringUTFChars(jstr_passwd, p_passwd);
 
@@ -200,22 +208,27 @@ jboolean com_amlogic_PppoeOperation_disconnect
 
 
 jint com_amlogic_PppoeOperation_status
-(JNIEnv *env, jobject obj)
+(JNIEnv *env, jobject obj, jstring jstr_if_name)
 {
+    char *p_ifname;
     int status;
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.status\n");
 
-    status = get_pppoe_status("eth0");
+    p_ifname = (char *)env->GetStringUTFChars(jstr_if_name, NULL);
+    status = get_pppoe_status(p_ifname);
+    
+    env->ReleaseStringUTFChars(jstr_if_name, p_ifname);
+
     return status;
 }
 
 
 static JNINativeMethod gPppoeJNIMethods[] = {
     /* name, signature, funcPtr */
-    { "connect",       "(Ljava/lang/String;Ljava/lang/String;)Z", (void*) com_amlogic_PppoeOperation_connect },
+    { "connect",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z", (void*) com_amlogic_PppoeOperation_connect },
     { "disconnect",    "()Z", (void*) com_amlogic_PppoeOperation_disconnect },
-    { "status",       "()I", (void*) com_amlogic_PppoeOperation_status },
+    { "status",       "(Ljava/lang/String;)I", (void*) com_amlogic_PppoeOperation_status },
 };
 
 
