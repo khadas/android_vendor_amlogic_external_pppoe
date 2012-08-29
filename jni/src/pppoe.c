@@ -645,7 +645,7 @@ main(int argc, char *argv[])
     } else {
         conn.discoverySocket =
 	    openInterface(conn.ifName, Eth_PPPOE_Discovery, conn.myEth);
-    	syslog( LOG_INFO, "discovery\n");
+    	syslog( LOG_INFO, "begin discovery conn.myEth =%p\n", conn.myEth);
         discovery(&conn);
     }
     if (optSkipSession) {

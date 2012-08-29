@@ -45,6 +45,7 @@ static char const RCSID[] =
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "../../ppp/pppd/pathnames.h"
 /* Are we running SUID or SGID? */
 int IsSetID = 0;
 
@@ -568,6 +569,164 @@ sendPADT(PPPoEConnection *conn, char const *msg)
     }
 #endif
     syslog(LOG_INFO,"Sent PADT");
+}
+
+
+int
+getRawSocket(char const *ifname)
+{
+    int ret;
+    int optval=1;
+    int fd;
+    struct ifreq ifr;
+    int domain, stype;
+
+    struct sockaddr_ll sa;
+
+    memset(&sa, 0, sizeof(sa));
+
+    domain = PF_PACKET;
+    stype = SOCK_RAW;
+
+    fd = socket(domain, stype, htons(ETH_PPPOE_DISCOVERY)); 
+    if (fd  < 0) {
+        syslog(LOG_INFO,"failed to create raw socket");
+        return -1;
+    }
+
+    ret = setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(optval));
+    if (ret  < 0) {
+        syslog(LOG_INFO,"failed to setsockopt");
+        return -1;
+    }
+
+
+    /* Get interface index */
+    sa.sll_family = AF_PACKET;
+    sa.sll_protocol = htons(ETH_PPPOE_DISCOVERY);
+
+    strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+    ret = ioctl(fd, SIOCGIFINDEX, &ifr);
+    if (ret  < 0) {
+        syslog(LOG_INFO,"failed to ioctl");
+        return -1;
+    }
+    sa.sll_ifindex = ifr.ifr_ifindex;
+
+    /* We're only interested in packets on specified interface */
+    ret = bind(fd, (struct sockaddr *) &sa, sizeof(sa));
+    if (ret  < 0) {
+        syslog(LOG_INFO,"failed to bind");
+        return -1;
+    }
+
+    return fd;
+}
+
+
+void
+sendSavedPADT(char *padt_file)
+{
+    FILE *file_fd = NULL;
+    char *packet;
+    long len;
+    int fd;
+    
+    file_fd = fopen(padt_file, "r");
+    if (!file_fd) {
+        syslog(LOG_INFO,"failed to read padt");
+        return;
+    }
+    
+    fseek(file_fd, 0, SEEK_END);
+    len = ftell(file_fd);
+    if (len < 0) {
+        goto free_file_fd;
+    }
+    
+    packet = malloc(len);
+    if (!packet){
+        syslog(LOG_INFO, "sendSavedPADT: failed to malloc");
+        goto free_file_fd;
+    }
+
+    fseek(file_fd, 0, SEEK_SET);
+	fread(packet, 1, len, file_fd);
+
+    fd = getRawSocket("eth0");
+    if ( fd < 0){
+        syslog(LOG_INFO, "sendSavedPADT: failed to getRawSocket");
+        goto free_packet;
+
+    }
+    send( fd, packet, len, 0);
+    syslog(LOG_INFO, "Send SavedPADT(fd = %d) by eth0", fd);
+
+    close(fd);
+    
+free_packet:
+    free(packet);
+
+free_file_fd:
+    fclose(file_fd);
+    }
+
+
+void
+savePADT(PPPoEConnection *conn, char const *msg)
+{
+    FILE *padt_file_bin = NULL;
+    PPPoEPacket packet;
+    unsigned char *cursor = packet.payload;
+
+    UINT16_t plen = 0;
+
+    memcpy(packet.ethHdr.h_dest, conn->peerEth, ETH_ALEN);
+    memcpy(packet.ethHdr.h_source, conn->myEth, ETH_ALEN);
+
+    packet.ethHdr.h_proto = htons(Eth_PPPOE_Discovery);
+    packet.ver = 1;
+    packet.type = 1;
+    packet.code = CODE_PADT;
+    packet.session = conn->session;
+
+    /* Reset Session to zero so there is no possibility of
+       recursive calls to this function by any signal handler */
+    //conn->session = 0;
+
+    /* If we're using Host-Uniq, copy it over */
+    if (conn->useHostUniq) {
+	PPPoETag hostUniq;
+	pid_t pid = getpid();
+	hostUniq.type = htons(TAG_HOST_UNIQ);
+	hostUniq.length = htons(sizeof(pid));
+	memcpy(hostUniq.payload, &pid, sizeof(pid));
+	memcpy(cursor, &hostUniq, sizeof(pid) + TAG_HDR_SIZE);
+	cursor += sizeof(pid) + TAG_HDR_SIZE;
+	plen += sizeof(pid) + TAG_HDR_SIZE;
+    }
+
+    /* Copy error message */
+    if (msg) {
+	PPPoETag err;
+	size_t elen = strlen(msg);
+	err.type = htons(TAG_GENERIC_ERROR);
+	err.length = htons(elen);
+	strcpy((char *) err.payload, msg);
+	memcpy(cursor, &err, elen + TAG_HDR_SIZE);
+	cursor += elen + TAG_HDR_SIZE;
+	plen += elen + TAG_HDR_SIZE;
+    }
+
+    packet.length = htons(plen);
+
+    padt_file_bin = fopen(_ROOT_PATH "/etc/ppp/padt_bin", "w");
+    if (!padt_file_bin) {
+        syslog(LOG_INFO,"failed to save padt_bin");
+    }
+    fwrite(&packet, (int) (plen + HDR_SIZE), 1, padt_file_bin);
+    fflush(padt_file_bin);
+    fclose(padt_file_bin);
 }
 
 /***********************************************************************

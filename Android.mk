@@ -48,7 +48,9 @@ include $(BUILD_SHARED_LIBRARY)
 
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES:= jni/src/pppoe_cli.c
+LOCAL_SRC_FILES:= jni/src/pppoe_cli.c \
+	jni/src/common.c
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := pcli
 LOCAL_SHARED_LIBRARIES := libcutils libnetutils 

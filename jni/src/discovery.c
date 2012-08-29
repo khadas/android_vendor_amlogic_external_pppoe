@@ -652,6 +652,7 @@ waitForPADS(PPPoEConnection *conn, int timeout)
 * Performs the PPPoE discovery phase
 ***********************************************************************/
 static struct timeval current_time;
+void savePADT(PPPoEConnection *conn, char const *msg);
 
 static int g_padi_sent = 0;
 void
@@ -730,6 +731,8 @@ discovery(PPPoEConnection *conn)
 	timeout *= 2;
     } while (conn->discoveryState == STATE_SENT_PADR);
 
+    savePADT(conn, "RP-PPPoE: Received gaokj to disconnect");
+    
     /* We're done. */
     conn->discoveryState = STATE_SESSION;
     return;

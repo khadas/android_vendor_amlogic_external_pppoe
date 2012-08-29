@@ -35,9 +35,18 @@ int main(int argc, char *argv[])
     struct netwrapper_ctrl * ctrl;
     
     if (argc < 2 || (0 != strcmp( "connect", argv[1]) &&
-                     0 != strcmp( "disconnect", argv[1])  )) {
+                     0 != strcmp( "disconnect", argv[1] ) &&
+                     0 != strcmp( "terminate", argv[1] ))) {
         usage();
         return -2;
+    }
+
+	if (0 == strcmp( "terminate", argv[1] )) {
+        for ( i = 0; i < 3; i++ ) {
+            sendSavedPADT(_ROOT_PATH "/etc/ppp/padt_bin");
+            sleep(1);
+        }
+        return 0;
     }
     
     ctrl = netwrapper_ctrl_open(_ROOT_PATH "/etc/ppp/pppcli", PPPOE_WRAPPER_SERVER_PATH);
