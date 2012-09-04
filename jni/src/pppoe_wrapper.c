@@ -103,6 +103,18 @@ static int pppoe_disconnect_handler(char *request)
     return 0;    
 }
 
+extern void sendSavedPADT(char *padt_file);
+static int pppoe_terminate_handler(char *request)
+{
+    int i;
+    
+    for ( i = 0; i < 3; i++ ) {
+        sendSavedPADT(_ROOT_PATH "/etc/ppp/padt_bin");
+        sleep(1);
+    }
+
+    return 0;    
+}
 
 
 static int pppoe_connect_handler(char *request)
@@ -114,6 +126,7 @@ static int pppoe_connect_handler(char *request)
 int main(int argc, char* argv[])
 {
     netwrapper_register_handler("ppp-stop", pppoe_disconnect_handler);
+    netwrapper_register_handler("ppp-terminate", pppoe_terminate_handler);
     netwrapper_register_handler("pppd pty", pppoe_connect_handler);
     netwrapper_main(PPPOE_WRAPPER_SERVER_PATH);
 

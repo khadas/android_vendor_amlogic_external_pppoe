@@ -8,6 +8,7 @@ public class PppoeOperation
 
 	public native boolean connect(String ifname, String account, String passwd);
 	public native boolean disconnect();
+	public native boolean terminate();
 	public native int status(String ifname);
 	static {
         System.loadLibrary("pppoejni");

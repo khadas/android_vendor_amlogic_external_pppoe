@@ -46,8 +46,8 @@ extern int get_pppoe_status( const char *phy_if_name);
 
 static char pppoe_connect_cmd[PPPOE_CONNECT_CMD_LEN_MAX];
 
-static char pppoe_disconnect_cmd[512] = {"ppp-stop"};
-
+static char pppoe_disconnect_cmd[512] = "ppp-stop";
+static char pppoe_terminate_cmd[512] = "ppp-terminate";
 
 static char pppoe_plugin_cmd[PPPOE_PLUGIN_CMD_LEN_MAX];
 
@@ -206,6 +206,26 @@ jboolean com_amlogic_PppoeOperation_disconnect
     return 1;
 }
 
+jboolean com_amlogic_PppoeOperation_terminate
+(JNIEnv *env, jobject obj)
+{
+    struct netwrapper_ctrl * ctrl;
+
+    __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.terminate\n");
+
+    ctrl = netwrapper_ctrl_open(PPPOE_WRAPPER_CLIENT_PATH, PPPOE_WRAPPER_SERVER_PATH);
+    if (ctrl == NULL) {
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
+        return -1;
+    }
+
+    netwrapper_ctrl_request(ctrl, pppoe_terminate_cmd, strlen(pppoe_terminate_cmd));
+
+    netwrapper_ctrl_close(ctrl);
+
+    return 1;
+}
+
 
 jint com_amlogic_PppoeOperation_status
 (JNIEnv *env, jobject obj, jstring jstr_if_name)
@@ -228,6 +248,7 @@ static JNINativeMethod gPppoeJNIMethods[] = {
     /* name, signature, funcPtr */
     { "connect",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z", (void*) com_amlogic_PppoeOperation_connect },
     { "disconnect",    "()Z", (void*) com_amlogic_PppoeOperation_disconnect },
+    { "terminate",     "()Z", (void*) com_amlogic_PppoeOperation_terminate },
     { "status",       "(Ljava/lang/String;)I", (void*) com_amlogic_PppoeOperation_status },
 };
 

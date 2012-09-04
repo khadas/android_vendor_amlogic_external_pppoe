@@ -57,7 +57,8 @@ LOCAL_SHARED_LIBRARIES := libcutils libnetutils
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES:= jni/src/pppoe_wrapper.c
+LOCAL_SRC_FILES:= jni/src/pppoe_wrapper.c \
+        jni/src/common.c
 
 LOCAL_SHARED_LIBRARIES := \
         libcutils libcrypto libnetutils 
