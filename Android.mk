@@ -58,8 +58,8 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := ntfs-3g
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := 
-LOCAL_STATIC_LIBRARIES := libfuse libntfs-3g  libc libc_common
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_STATIC_LIBRARIES := libfuse libntfs-3g 
 
 include $(BUILD_EXECUTABLE)
 
