@@ -662,7 +662,7 @@ discovery(PPPoEConnection *conn)
     int padrAttempts = 0;
     int timeout = conn->discoveryTimeout;
 
-	fprintf(stderr, "discovery: timeout = %d\n", timeout);
+	syslog( LOG_INFO, "discovery: timeout = %d\n", timeout);
     
     /* Skip discovery? */
     if (conn->skipDiscovery) {
@@ -682,19 +682,16 @@ discovery(PPPoEConnection *conn)
 		timeout = conn->discoveryTimeout;
 		printErr("Timeout waiting for PADO packets");
 	    } else {
-		rp_fatal("Timeout waiting for PADO packets");
+		rp_fatal("FATAL: Timeout waiting for PADO packets");
 	    }
 	}
-	fprintf(stderr, "sendPADI\n");
 	syslog( LOG_INFO, "sendPADI\n");
 	sendPADI(conn);
     
 	conn->discoveryState = STATE_SENT_PADI;
     gettimeofday(&current_time, NULL);
-	fprintf(stderr, "before: sec = %d, usec = %d\n", (int)current_time.tv_sec, (int)current_time.tv_usec);
 	waitForPADO(conn, timeout);
     gettimeofday(&current_time, NULL);
-	fprintf(stderr, "after: sec = %d, usec = %d\n", (int)current_time.tv_sec, (int)current_time.tv_usec);
 	/* If we're just probing for access concentrators, don't do
 	   exponential backoff.  This reduces the time for an unsuccessful
 	   probe to 15 seconds. */
@@ -723,7 +720,6 @@ discovery(PPPoEConnection *conn)
 		rp_fatal("Timeout waiting for PADS packets");
 	    }
 	}
-	fprintf(stderr, "sendPADR\n");
 	syslog( LOG_INFO, "sendPADR\n");
 	sendPADR(conn);
 	conn->discoveryState = STATE_SENT_PADR;

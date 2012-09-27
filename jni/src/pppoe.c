@@ -57,6 +57,7 @@ static char const RCSID[] =
 #include <linux/termios.h>
 #endif
 #endif
+#include "pppoe_status.h"
 
 /* Default interface if no -I option given */
 #define DEFAULT_IF "eth0"
@@ -288,6 +289,7 @@ session(PPPoEConnection *conn)
 	    syslog(LOG_ERR, "Inactivity timeout... something wicked happened on session %d",
 		   (int) ntohs(conn->session));
 	    sendPADT(conn, "RP-PPPoE: Inactivity timeout");
+	    syslog(LOG_ERR, "EXIT");
 	    exit(EXIT_FAILURE);
 	}
 
@@ -343,6 +345,35 @@ sigPADT(int src)
   //exit(EXIT_SUCCESS);
 }
 
+
+
+static void
+sigUserAskExit(int src)
+{
+  int prop_val[64];
+  FILE *file;
+  syslog(LOG_INFO,"Received signal %d on session %d.",
+	 (int)src, (int) ntohs(Connection->session));
+
+  /*
+  syslog(LOG_INFO,"set net.ppp.usreit as yes");
+  property_set("net.ppp.usreit", "yes");
+  property_get("net.ppp.usreit", prop_val, "unknown");
+  syslog(LOG_INFO,"read net.ppp.usreit %s", prop_val);
+  */
+  umask(0);
+  file = fopen(_ROOT_PATH "/etc/ppp/useraskquit", "w");
+  if (!file) {
+    syslog(LOG_INFO, "Could not open %s: %s\n",
+	  "/etc/ppp/useraskquit", strerror(errno));
+  }
+  else
+    fclose(file);
+
+  sendPADTf(Connection, "RP-PPPoE: Received signal %d", src);
+}
+
+
 /**********************************************************************
 *%FUNCTION: usage
 *%ARGUMENTS:
@@ -391,6 +422,9 @@ usage(char const *argv0)
     exit(EXIT_SUCCESS);
 }
 
+static char *lockfile_path;
+#define LOCKFILE_FORMAT            _ROOT_PATH "/etc/ppp/pppoe-%s.lock"
+
 /**********************************************************************
 *%FUNCTION: main
 *%ARGUMENTS:
@@ -408,6 +442,8 @@ main(int argc, char *argv[])
     unsigned int m[6];		/* MAC address in -e option */
     unsigned int s;		/* Temporary to hold session */
     FILE *pidfile;
+    int pidfd = -1;
+    int len;
     unsigned int discoveryType, sessionType;
     char const *options;
 
@@ -510,12 +546,7 @@ main(int argc, char *argv[])
 	case 'p':
 	    switchToRealID();
 	    pidfile = fopen(optarg, "w");
-	    if (pidfile) {
-        syslog( LOG_INFO, "open %s OK\n", optarg);
-		fprintf(pidfile, "%lu\n", (unsigned long) getpid());
-		fclose(pidfile);
-	    }
-        else {
+	    if (!pidfile) {
             syslog( LOG_INFO, "Could not open %s: %s\n",
             			optarg, strerror(errno));
         }
@@ -591,6 +622,29 @@ main(int argc, char *argv[])
 #endif
     }
 
+	len = strlen(LOCKFILE_FORMAT) + strlen(conn.ifName) + 2;
+	lockfile_path = malloc(len);
+	snprintf(lockfile_path, len, LOCKFILE_FORMAT, conn.ifName);
+    
+	pidfd = open(lockfile_path, O_WRONLY | O_CREAT | O_NONBLOCK, 0664);
+	if (pidfd == -1) {
+		syslog(LOG_ERR, "failed to open %s. EXIT", lockfile_path);
+		exit(EXIT_FAILURE);
+	}
+
+    /* Lock the file so that only one instance of pppoe runs
+	 * on an interface */
+	if (flock(pidfd, LOCK_EX | LOCK_NB) == -1) {
+		syslog(LOG_ERR, "failed to lock %s. EXIT", lockfile_path);
+		exit(EXIT_FAILURE);
+	}
+ 
+    if (pidfile) {
+        syslog( LOG_INFO, "open %s OK\n", optarg);
+    	fprintf(pidfile, "%lu\n", (unsigned long) getpid());
+    	fclose(pidfile);
+    }
+
     if (!conn.printACNames) {
 
 #ifdef HAVE_N_HDLC
@@ -664,7 +718,7 @@ main(int argc, char *argv[])
     signal(SIGTERM, SIG_IGN);
     signal(SIGINT, SIG_IGN);
     signal(SIGHUP, sigPADT);
-    signal(SIGUSR1, sigPADT);
+    signal(SIGUSR1, sigUserAskExit);
 
     session(&conn);
     return 0;

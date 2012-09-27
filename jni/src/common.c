@@ -253,7 +253,6 @@ dropPrivs(void)
 void
 printErr(char const *str)
 {
-    fprintf(stderr, "pppoe: %s\n", str);
     syslog(LOG_ERR, "%s", str);
 }
 
