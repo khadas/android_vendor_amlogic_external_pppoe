@@ -30,6 +30,8 @@ dalvik/libnativehelper/include/nativehelper/jni.h
 #define PPPOE_PLUGIN_CMD_LEN_MAX 256
 #define PPPOE_CONNECT_CMD_LEN_MAX 512
 
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define TRACE() LOGI("[%s::%d]\n",__FUNCTION__,__LINE__)
 using namespace android;
 
