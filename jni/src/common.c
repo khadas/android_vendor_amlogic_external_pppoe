@@ -642,7 +642,13 @@ sendSavedPADT(char *padt_file)
     if (len < 0) {
         goto free_file_fd;
     }
-    
+    else if (len == 0) {
+        syslog(LOG_INFO, "sendSavedPADT: file(%s) is a empty file\n", padt_file);
+        fclose(file_fd);
+        unlink(padt_file);
+        return;
+    }
+     
     packet = malloc(len);
     if (!packet){
         syslog(LOG_INFO, "sendSavedPADT: failed to malloc");
@@ -650,7 +656,7 @@ sendSavedPADT(char *padt_file)
     }
 
     fseek(file_fd, 0, SEEK_SET);
-	fread(packet, 1, len, file_fd);
+    fread(packet, 1, len, file_fd);
 
     fd = getRawSocket("eth0");
     if ( fd < 0){
@@ -668,7 +674,7 @@ free_packet:
 
 free_file_fd:
     fclose(file_fd);
-    }
+}
 
 
 void
