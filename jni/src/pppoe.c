@@ -59,6 +59,170 @@ static char const RCSID[] =
 #endif
 #include "pppoe_status.h"
 
+#include <linux/rtnetlink.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <net/if_arp.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <string.h>
+#include <dirent.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <linux/rtnetlink.h>  //for ifinfomsg
+#include <linux/netlink.h> //for nlmsghdr{}
+
+#define NL_POLL_MSG_SZ   8*1024
+
+static int open_NETLINK_socket(int netlinkFamily, int groups)
+{
+    struct sockaddr_nl nl_addr;
+    int ret = -1;
+    int mysocket;
+
+    memset(&nl_addr, 0, sizeof(struct sockaddr_nl));
+    nl_addr.nl_family = AF_NETLINK;
+    nl_addr.nl_pid = 0;
+    nl_addr.nl_groups = groups;
+
+    /*
+     *Create connection to netlink socket
+     */
+    mysocket = socket(AF_NETLINK,SOCK_DGRAM,netlinkFamily);
+    if (mysocket < 0) {
+        syslog(LOG_ERR,"Can not create netlink poll socket" );
+        goto error;
+    }
+
+    errno = 0;
+    if(bind(mysocket, (struct sockaddr *)(&nl_addr),
+            sizeof(struct sockaddr_nl))) {
+        syslog(LOG_ERR, "Can not bind to netlink poll socket,%s",strerror(errno));
+
+        goto error;
+    }
+
+    return mysocket;
+error:
+    syslog(LOG_ERR, "%s failed" ,__FUNCTION__);
+    if (mysocket >0)
+        close(mysocket);
+    return ret;
+}
+
+
+static void parseNetlinkMessage
+(char *buff, int len, char*phy_ifname) 
+{
+    unsigned int left;
+    int nAttrLen;
+    struct nlmsghdr *nh;
+    struct rtattr *pstruAttr;
+    char *ifname = "UNKNOWN_NAME";
+
+    for (nh = (struct nlmsghdr *) buff; NLMSG_OK (nh, len);
+         nh = NLMSG_NEXT (nh, len))
+    {
+        if (nh->nlmsg_type == NLMSG_DONE){
+            syslog(LOG_ERR, "Did not find useful eth interface information");
+            return;
+        }
+
+        if (nh->nlmsg_type == NLMSG_ERROR){
+            /* Do some error handling. */
+            syslog(LOG_ERR, "Read device name failed");
+            return;
+        }
+
+        if (nh->nlmsg_type == RTM_DELLINK ||
+            nh->nlmsg_type == RTM_NEWLINK) {
+            struct ifinfomsg *einfo;
+            int type = nh->nlmsg_type;
+            char *desc;
+
+            einfo = (struct ifinfomsg *)NLMSG_DATA(nh);
+
+            pstruAttr = IFLA_RTA(einfo);
+            nAttrLen = NLMSG_PAYLOAD(nh, sizeof(struct ifinfomsg));
+
+            while(RTA_OK(pstruAttr, nAttrLen))
+            {
+                switch(pstruAttr->rta_type)
+                {
+                    case IFLA_IFNAME:
+                        ifname = (char *)RTA_DATA(pstruAttr);
+                        break;
+
+                    default:
+                        break;
+                }
+
+                pstruAttr = RTA_NEXT(pstruAttr, nAttrLen);
+            }
+
+            if (0 != strcmp(ifname, phy_ifname)) {
+                continue;
+            }
+
+            if (type == RTM_NEWLINK &&
+                (!(einfo->ifi_flags & IFF_LOWER_UP))) {
+                    type = RTM_DELLINK;
+            }
+
+            desc = (char*)((type == RTM_DELLINK) ? "DELLINK" : "NEWLINK");
+
+            syslog(LOG_INFO, "%s: %s(%d), flags=0X%X", ifname, desc, type, einfo->ifi_flags);
+            if (type == RTM_DELLINK) {
+                syslog(LOG_ERR, "physical interface %s down", ifname);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+}
+
+
+
+
+static void waitForPhyInterfaceEvent
+(int nl_socket_netlink_route, char *phy_ifname)
+{
+    char *buff;
+    struct iovec iov;
+    struct msghdr msg;
+    int len;
+    int result = -1;
+    int maxfd;
+
+    buff = (char *)malloc(NL_POLL_MSG_SZ);
+    if (!buff) {
+        syslog(LOG_ERR, "Allocate poll buffer failed");
+        goto error;
+    }
+
+    iov.iov_base = buff;
+    iov.iov_len = NL_POLL_MSG_SZ;
+    msg.msg_name = NULL;
+    msg.msg_namelen =  0;
+    msg.msg_iov =  &iov;
+    msg.msg_iovlen =  1;
+    msg.msg_control =  NULL;
+    msg.msg_controllen =  0;
+    msg.msg_flags =  0;
+
+
+    if((len = recvmsg(nl_socket_netlink_route, &msg, 0))>= 0) {
+        parseNetlinkMessage(buff, len, phy_ifname);
+    }
+
+    return;
+
+error:
+    if(buff)
+        free(buff);
+    return;
+}
+
 /* Default interface if no -I option given */
 #define DEFAULT_IF "eth0"
 
@@ -75,6 +239,10 @@ PPPoEConnection *Connection = NULL; /* Must be global -- used
 				       in signal handler */
 
 int persist = 0; 		/* We are not a pppd plugin */
+
+
+
+
 /***********************************************************************
 *%FUNCTION: sendSessionPacket
 *%ARGUMENTS:
@@ -242,6 +410,7 @@ session(PPPoEConnection *conn)
     /* Prepare for select() */
     if (conn->sessionSocket > maxFD)   maxFD = conn->sessionSocket;
     if (conn->discoverySocket > maxFD) maxFD = conn->discoverySocket;
+    if (conn->netlinkSocket > maxFD) maxFD = conn->netlinkSocket;
     maxFD++;
 
     /* Fill in the constant fields of the packet to save time */
@@ -273,11 +442,12 @@ session(PPPoEConnection *conn)
 	    tvp = &tv;
 	}
 	FD_ZERO(&readable);
-	FD_SET(0, &readable);     /* ppp packets come from stdin */
+	FD_SET(STDIN_FILENO, &readable);     /* ppp packets come from stdin */
 	if (conn->discoverySocket >= 0) {
 	    FD_SET(conn->discoverySocket, &readable);
 	}
 	FD_SET(conn->sessionSocket, &readable);
+	FD_SET(conn->netlinkSocket, &readable);
 	while(1) {
 	    r = select(maxFD, &readable, NULL, NULL, tvp);
 	    if (r >= 0 || errno != EINTR) break;
@@ -294,7 +464,7 @@ session(PPPoEConnection *conn)
 	}
 
 	/* Handle ready sockets */
-	if (FD_ISSET(0, &readable)) {
+	if (FD_ISSET(STDIN_FILENO, &readable)) {
 	    if (conn->synchronous) {
 		syncReadFromPPP(conn, &packet);
 	    } else {
@@ -311,6 +481,10 @@ session(PPPoEConnection *conn)
 		}
 	    } while (BPF_BUFFER_HAS_DATA);
 	}
+
+	    if (FD_ISSET(conn->netlinkSocket, &readable)) {
+            waitForPhyInterfaceEvent(conn->netlinkSocket, conn->ifName);
+	    }
 
 #ifndef USE_BPF
 	/* BSD uses a single socket, see *syncReadFromEth() */
@@ -701,6 +875,8 @@ main(int argc, char *argv[])
 	    openInterface(conn.ifName, Eth_PPPOE_Discovery, conn.myEth);
     	syslog( LOG_INFO, "begin discovery conn.myEth =%p\n", conn.myEth);
         discovery(&conn);
+
+        conn.netlinkSocket = open_NETLINK_socket(NETLINK_ROUTE, RTMGRP_LINK);
     }
     if (optSkipSession) {
 	printf("%u:%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -909,7 +1085,7 @@ asyncReadFromEth(PPPoEConnection *conn, int sock, int clampMss)
     *ptr++ = FRAME_FLAG;
 
     /* Ship it out */
-    if (write(1, pppBuf, (ptr-pppBuf)) < 0) {
+    if (write(STDOUT_FILENO, pppBuf, (ptr-pppBuf)) < 0) {
 	fatalSys("asyncReadFromEth: write");
     }
 }

@@ -266,6 +266,7 @@ typedef void ParseFunc(UINT16_t type,
 
 typedef struct PPPoEConnectionStruct {
     int discoveryState;		/* Where we are in discovery */
+    int netlinkSocket;		/* socket to monitor physical interface status */
     int discoverySocket;	/* Raw socket for discovery frames */
     int sessionSocket;		/* Raw socket for session frames */
     unsigned char myEth[ETH_ALEN]; /* My MAC address */

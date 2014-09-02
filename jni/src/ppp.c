@@ -173,7 +173,7 @@ asyncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet)
 
     int r;
 
-    r = read(0, buf, READ_CHUNK);
+    r = read(STDIN_FILENO, buf, READ_CHUNK);
     if (r < 0) {
 	fatalSys("read (asyncReadFromPPP)");
     }
