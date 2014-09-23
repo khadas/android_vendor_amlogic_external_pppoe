@@ -338,7 +338,7 @@
 #ifndef _OFF_T_DEFINED_
 #define _OFF_T_DEFINED_
 //typedef		loff_t       off_t;
-#define off_t loff_t
+//#define off_t loff_t
 #endif
 
 /* Enable GNU extensions on systems that have them.  */
