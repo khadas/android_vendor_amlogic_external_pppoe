@@ -19,14 +19,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
+
+#ifdef __SOLARIS__
+#include <sys/mnttab.h>
+#else /* __SOLARIS__ */
+#include <grp.h>
 #include <mntent.h>
+#include <sys/fsuid.h>
+#endif /* __SOLARIS__ */
+
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
-#include <sys/fsuid.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
-#include <grp.h>
 
 #define FUSE_DEV_NEW "/dev/fuse"
 
@@ -34,20 +40,25 @@
 #define MS_DIRSYNC 128
 #endif
 
+static const char *progname = "ntfs-3g-mount";
 
-struct mntent *getmntent_r (FILE *filep,
-	struct mntent *mnt, char *buff, int bufsize)
+static int mount_max = 1000;
+
+int drop_privs(void);
+int restore_privs(void);
+
+#ifdef HAVE_MNTENT_H
+struct mntent *getmntent_r (FILE *filep,struct mntent *mnt, char *buff, int bufsize)
 {
-	static const char sep[] = " \t\n";
-
+	static const char sep[] = " /t/n";
 	char *cp, *ptrptr;
-
 	if (!filep || !mnt || !buff)
-	    return NULL;
+		return NULL;
 
 	/* Loop on the file, skipping comment lines. - FvK 03/07/93 */
-	while ((cp = fgets(buff, bufsize, filep)) != NULL) {
-		if (buff[0] == '#' || buff[0] == '\n')
+	while ((cp = fgets(buff, bufsize, filep)) != NULL) 
+	{
+		if (buff[0] == '#' || buff[0] == '/n')
 			continue;
 		break;
 	}
@@ -57,7 +68,6 @@ struct mntent *getmntent_r (FILE *filep,
 	 */
 	if (cp == NULL)
 		return NULL;
-
 	ptrptr = 0;
 	mnt->mnt_fsname = strtok_r(buff, sep, &ptrptr);
 	if (mnt->mnt_fsname == NULL)
@@ -77,41 +87,33 @@ struct mntent *getmntent_r (FILE *filep,
 
 	cp = strtok_r(NULL, sep, &ptrptr);
 	mnt->mnt_freq = (cp != NULL) ? atoi(cp) : 0;
-
 	cp = strtok_r(NULL, sep, &ptrptr);
 	mnt->mnt_passno = (cp != NULL) ? atoi(cp) : 0;
 
 	return mnt;
 }
 
-
-#if  0
 struct mntent *getmntent(FILE * filep)
 {
-    struct mntent *tmp;
-    static char *buff = NULL;
-    static struct mntent mnt;
-//    __UCLIBC_MUTEX_LOCK(mylock);
-
-    if (!buff) {
-            buff = malloc(BUFSIZ);
+	struct mntent *tmp;
+	static char *buff = NULL;
+	static struct mntent mnt;
+	if (!buff)
+	{
+		buff = malloc(BUFSIZ);
 		if (!buff)
-		    abort();
-    }
-
-    tmp = getmntent_r(filep, &mnt, buff, BUFSIZ);
-//    __UCLIBC_MUTEX_UNLOCK(mylock);
-    return(tmp);
+			abort();
+	}
+	tmp = getmntent_r(filep, &mnt, buff, BUFSIZ);
+	return(tmp);
 }
-#endif
 
 int addmntent(FILE * filep, const struct mntent *mnt)
 {
 	if (fseek(filep, 0, SEEK_END) < 0)
 		return 1;
-
-	return (fprintf (filep, "%s %s %s %s %d %d\n", mnt->mnt_fsname, mnt->mnt_dir,
-		 mnt->mnt_type, mnt->mnt_opts, mnt->mnt_freq, mnt->mnt_passno) < 0 ? 1 : 0);
+	return (fprintf (filep, "%s %s %s %s %d %d/n", mnt->mnt_fsname, mnt->mnt_dir,
+		mnt->mnt_type, mnt->mnt_opts, mnt->mnt_freq, mnt->mnt_passno) < 0 ? 1 : 0);
 }
 
 char *hasmntopt(const struct mntent *mnt, const char *opt)
@@ -124,22 +126,39 @@ FILE *setmntent(const char *name, const char *mode)
 	return fopen(name, mode);
 }
 
-
 int endmntent(FILE * filep)
 {
 	if (filep != NULL)
 		fclose(filep);
 	return 1;
 }
+#endif
 
+#ifdef __SOLARIS__
 
+/*
+ * fusermount is not implemented in fuse-lite for Solaris,
+ * only the minimal functions are provided.
+ */
 
-static const char *progname = "ntfs-3g-mount";
+/*
+ * Solaris doesn't have setfsuid/setfsgid.
+ * This doesn't really matter anyway as this program shouldn't be made
+ * suid on Solaris. It should instead be used via a profile with the
+ * sys_mount privilege.
+ */
 
-static int mount_max = 1000;
+int drop_privs(void)
+{
+    return (0);
+}
 
-int drop_privs(void);
-int restore_privs(void);
+int restore_privs(void)
+{
+    return (0);
+}
+
+#else /* __SOLARIS__ */
 
 static const char *get_user_name(void)
 {
@@ -232,8 +251,6 @@ static int add_mount(const char *source, const char *mnt, const char *type,
 {
     return fuse_mnt_add_mount(progname, source, mnt, type, opts);
 }
-
-
 
 static int count_fuse_fs(void)
 {
@@ -514,7 +531,7 @@ static int do_mount(const char *mnt, char **typep, mode_t rootmode,
 	    if (errno_save == EPERM)
 		    fprintf(stderr, "User doesn't have privilege to mount. "
 			    "For more information\nplease see: "
-			    "http://ntfs-3g.org/support.html#unprivileged\n");
+			    "http://tuxera.com/community/ntfs-3g-faq/#unprivileged\n");
 	}
 	goto err;
     } else {
@@ -770,3 +787,5 @@ out:
     free(mnt);
     return res;	    
 }
+
+#endif /* __SOLARIS__ */

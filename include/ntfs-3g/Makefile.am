@@ -29,13 +29,15 @@ headers = \
 	ntfstime.h	\
 	object_id.h	\
 	param.h	\
+	realpath.h	\
 	reparse.h	\
 	runlist.h	\
 	security.h	\
 	support.h	\
 	types.h		\
 	unistr.h	\
-	volume.h
+	volume.h 	\
+	xattrs.h
 
 if INSTALL_LIBRARY
 ntfs3ginclude_HEADERS = $(headers)

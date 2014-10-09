@@ -46,6 +46,7 @@
 #include <sys/sysmacros.h>
 #endif
 
+#include "compat.h"
 #include "types.h"
 #include "debug.h"
 #include "attrib.h"
@@ -107,7 +108,11 @@
  */
 
 typedef struct {
-	GUID object_id;
+	union {
+		/* alignment may be needed to evaluate collations */
+		u32 alignment;
+		GUID guid;
+	} object_id;
 } OBJECT_ID_INDEX_KEY;
 
 typedef struct {
@@ -283,7 +288,6 @@ static int remove_object_id_index(ntfs_attr *na, ntfs_index_context *xo,
 		if (size >= (s64)sizeof(GUID)) {
 			memcpy(&key.object_id,
 				&old_attr->object_id,sizeof(GUID));
-			size = sizeof(GUID);
 			if (!ntfs_index_lookup(&key,
 					sizeof(OBJECT_ID_INDEX_KEY), xo)) {
 				entry = (struct OBJECT_ID_INDEX*)xo->entry;
@@ -296,7 +300,6 @@ static int remove_object_id_index(ntfs_attr *na, ntfs_index_context *xo,
 				memcpy(&old_attr->domain_id,
 					&entry->data.domain_id,
 					sizeof(GUID));
-				size = sizeof(OBJECT_ID_ATTR);
 				if (ntfs_index_rm(xo))
 					ret = -1;
 			}

@@ -1,66 +1,60 @@
 
-MAINTAINERCLEANFILES = $(srcdir)/Makefile.in
+AUTOMAKE_OPTIONS = gnu
+ACLOCAL_AMFLAGS = -I m4
 
+EXTRA_DIST = AUTHORS CREDITS COPYING NEWS autogen.sh  
+
+MAINTAINERCLEANFILES=\
+	$(srcdir)/configure \
+	$(srcdir)/Makefile.in \
+	$(srcdir)/aclocal.m4 \
+	$(srcdir)/compile \
+	$(srcdir)/depcomp \
+	$(srcdir)/install-sh \
+	$(srcdir)/ltmain.sh \
+	$(srcdir)/missing \
+	$(srcdir)/config.guess \
+	$(srcdir)/config.sub \
+	$(srcdir)/config.h.in \
+	$(srcdir)/config.h.in~ \
+	$(srcdir)/INSTALL \
+	$(srcdir)/m4/ltsugar.m4 \
+	$(srcdir)/m4/libtool.m4 \
+	$(srcdir)/m4/ltversion.m4 \
+	$(srcdir)/m4/lt~obsolete.m4 \
+	$(srcdir)/m4/ltoptions.m4
+
+SUBDIRS = include libfuse-lite libntfs-3g ntfsprogs src
+
+doc_DATA = README
+
+dist-hook:
+	$(MKDIR_P) "$(distdir)/m4"
+
+libtool: $(LIBTOOL_DEPS)
+	$(SHELL) ./config.status --recheck
+
+libs:
 if FUSE_INTERNAL
-FUSE_CFLAGS = -I$(top_srcdir)/include/fuse-lite
-FUSE_LIBS   =
-else
-FUSE_CFLAGS = $(FUSE_MODULE_CFLAGS)
-FUSE_LIBS   = $(FUSE_MODULE_LIBS)
+	(cd libfuse-lite && $(MAKE) libs) || exit 1;
 endif
+	(cd libntfs-3g && $(MAKE) libs) || exit 1;
 
-bin_PROGRAMS	 = ntfs-3g.probe
-rootbin_PROGRAMS = ntfs-3g lowntfs-3g
-rootsbin_DATA 	 = #Create directory
-man_MANS	 = ntfs-3g.8 ntfs-3g.probe.8
+libntfs:
+	(cd libntfs-3g && $(MAKE) libs) || exit 1;
 
-ntfs_3g_LDADD    = $(FUSE_LIBS) $(top_builddir)/libntfs-3g/libntfs-3g.la
-if REALLYSTATIC
-ntfs_3g_LDFLAGS  = $(AM_LDFLAGS) -all-static
-endif
-ntfs_3g_CFLAGS   =			\
-	$(AM_CFLAGS) 			\
-	-DFUSE_USE_VERSION=26 		\
-	$(FUSE_CFLAGS) 			\
-	-I$(top_srcdir)/include/ntfs-3g
-ntfs_3g_SOURCES  = ntfs-3g.c
+drivers: libs
+	(cd src && $(MAKE) drivers) || exit 1;
 
-lowntfs_3g_LDADD    = $(FUSE_LIBS) $(top_builddir)/libntfs-3g/libntfs-3g.la
-if REALLYSTATIC
-lowntfs_3g_LDFLAGS  = $(AM_LDFLAGS) -all-static
-endif
-lowntfs_3g_CFLAGS   =			\
-	$(AM_CFLAGS) 			\
-	-DFUSE_USE_VERSION=26 		\
-	$(FUSE_CFLAGS) 			\
-	-I$(top_srcdir)/include/ntfs-3g
-lowntfs_3g_SOURCES  = lowntfs-3g.c
+ntfsprogs: libntfs
+	(cd ntfsprogs && $(MAKE)) || exit 1;
 
-ntfs_3g_probe_LDADD 	= $(top_builddir)/libntfs-3g/libntfs-3g.la
-if REALLYSTATIC
-ntfs_3g_probe_LDFLAGS	= $(AM_LDFLAGS) -all-static
-endif
-ntfs_3g_probe_CFLAGS  	= $(AM_CFLAGS) -I$(top_srcdir)/include/ntfs-3g
-ntfs_3g_probe_SOURCES 	= ntfs-3g.probe.c
+if ENABLE_NTFSPROGS
+strip:
+	(cd ntfsprogs && $(MAKE) strip) || exit 1;
 
-if RUN_LDCONFIG
-install-exec-hook:
-	$(LDCONFIG)
-endif
+extra:	extras
 
-if ENABLE_MOUNT_HELPER
-install-exec-local:	install-rootbinPROGRAMS
-	$(MKDIR_P) "$(DESTDIR)/sbin"
-	$(LN_S) -f "$(rootbindir)/ntfs-3g" "$(DESTDIR)/sbin/mount.ntfs-3g"
-	$(LN_S) -f "$(rootbindir)/lowntfs-3g" "$(DESTDIR)/sbin/mount.lowntfs-3g"
-endif
-
-install-data-local:	install-man8
-	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
-	$(LN_S) -f ntfs-3g.8 "$(DESTDIR)$(man8dir)/mount.lowntfs-3g.8"
-
-uninstall-local:
-	$(RM) -f "$(DESTDIR)$(man8dir)/mount.ntfs-3g.8"
-if ENABLE_MOUNT_HELPER
-	$(RM) -f "$(DESTDIR)/sbin/mount.ntfs-3g" "$(DESTDIR)/sbin/mount.lowntfs-3g"
+extras: libs
+	(cd ntfsprogs && $(MAKE) extras) || exit 1;
 endif

@@ -154,8 +154,8 @@ typedef int BOOL;   /* Already defined in windows.h */
 typedef u32 DWORD; /* must be 32 bits whatever the platform */
 typedef DWORD *LPDWORD;
 
-#define MS_NONE 0    /* no flag for mounting the device */
-#define MS_RDONLY 1  /* flag for mounting the device read-only */
+#define NTFS_MNT_NONE 0    /* no flag for mounting the device */
+#define NTFS_MNT_RDONLY 1  /* flag for mounting the device read-only */
 
 #endif /* WIN32 */
 
@@ -221,14 +221,6 @@ typedef DWORD *LPDWORD;
 
 typedef le16 ntfschar;
 
-typedef struct {
-	le32 a;
-	le16 b,c;
-	struct {
-		le16 m,n,o,p,  q,r,s,t;
-	} ;
-} GUID;
-
 #define ntfs_log_error(args...) do { printf("** " args); if (!isatty(1)) fprintf(stderr,args); } while(0)
 
 /*
@@ -260,9 +252,14 @@ struct SECURITY_DATA {
 	unsigned int flags:4;
 } ;
 
-#define AUTH1 3141592653U
-#define AUTH2 589793238
-#define AUTH3 462843383
+		/* default security sub-authorities */
+enum {
+	DEFSECAUTH1 = -1153374643, /* 3141592653 */
+	DEFSECAUTH2 = 589793238,
+	DEFSECAUTH3 = 462843383,
+	DEFSECBASE = 10000
+};
+
 #define OWNERID 1016
 #define GROUPID 513
 
@@ -519,7 +516,8 @@ enum {
 #define CONTAINER_INHERIT_ACE		  (0x2)
 #define NO_PROPAGATE_INHERIT_ACE	  (0x4)
 #define INHERIT_ONLY_ACE		  (0x8)
-#define VALID_INHERIT_FLAGS		  (0xF)
+#define INHERITED_ACE			  (0x10)
+#define VALID_INHERIT_FLAGS		  (0x1F)
 
 /*
  *	     Other useful definitions
@@ -534,6 +532,12 @@ enum {
 
 #ifndef ACL_REVISION_DS	/* not always defined in <windows.h> */
 #define ACL_REVISION_DS 4
+#endif
+
+#ifndef INHERITED_ACE /* not always defined in <windows.h> */
+#define INHERITED_ACE			  (0x10)
+#undef VALID_INHERIT_FLAGS
+#define VALID_INHERIT_FLAGS		  (0x1F)
 #endif
 
 /*

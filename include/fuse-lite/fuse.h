@@ -19,14 +19,10 @@
 #include <fcntl.h>
 #include <time.h>
 #include <utime.h>
-#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-
 #include <sys/stat.h>
-
 #if HAVE_SYS_STATVFS_H
-#include <sys/statfs.h>
+#include <sys/statvfs.h>
 #endif
 
 #ifdef __cplusplus
@@ -191,9 +187,7 @@ struct fuse_operations {
 	 * version 2.5
 	 */
 #if HAVE_SYS_STATVFS_H
-
-	int (*statfs) (const char *, struct statfs *);
-
+	int (*statfs) (const char *, struct statvfs *);
 #endif
 	/** Possibly flush cached data
 	 *
@@ -431,12 +425,6 @@ struct fuse_operations {
 	int (*bmap) (const char *, size_t blocksize, uint64_t *idx);
  	unsigned int flag_nullpath_ok : 1;
  
- 	/**
-	 * Flag indicating that the filesystem accepts special
-	 * UTIME_NOW and UTIME_OMIT values in its utimens operation.
-	 */
-	unsigned int flag_utime_omit_ok : 1;
-
 	/**
  	 * Reserved flags, don't set
  	 */
@@ -579,11 +567,9 @@ int fuse_fs_fsync(struct fuse_fs *fs, const char *path, int datasync,
 		  struct fuse_file_info *fi);
 int fuse_fs_flush(struct fuse_fs *fs, const char *path,
 		  struct fuse_file_info *fi);
-
 #if HAVE_SYS_STATVFS_H
-int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statfs *buf);
+int fuse_fs_statfs(struct fuse_fs *fs, const char *path, struct statvfs *buf);
 #endif
-
 int fuse_fs_opendir(struct fuse_fs *fs, const char *path,
 		    struct fuse_file_info *fi);
 int fuse_fs_readdir(struct fuse_fs *fs, const char *path, void *buf,
@@ -636,6 +622,47 @@ void fuse_fs_destroy(struct fuse_fs *fs);
  */
 struct fuse_fs *fuse_fs_new(const struct fuse_operations *op, size_t op_size,
 			    void *user_data);
+
+#ifdef __SOLARIS__
+
+/**
+ * Filesystem module
+ *
+ * Filesystem modules are registered with the FUSE_REGISTER_MODULE()
+ * macro.
+ *
+ * If the "-omodules=modname:..." option is present, filesystem
+ * objects are created and pushed onto the stack with the 'factory'
+ * function.
+ */
+struct fuse_module {
+    /**
+     * Name of filesystem
+     */
+    const char *name;
+
+    /**
+     * Factory for creating filesystem objects
+     *
+     * The function may use and remove options from 'args' that belong
+     * to this module.
+     *
+     * For now the 'fs' vector always contains exactly one filesystem.
+     * This is the filesystem which will be below the newly created
+     * filesystem in the stack.
+     *
+     * @param args the command line arguments
+     * @param fs NULL terminated filesystem object vector
+     * @return the new filesystem object
+     */
+    struct fuse_fs *(*factory)(struct fuse_args *args, struct fuse_fs *fs[]);
+
+    struct fuse_module *next;
+    struct fusemod_so *so;
+    int ctr;
+};
+
+#endif /* __SOLARIS__ */
 
 /* ----------------------------------------------------------- *
  * Advanced API for event handling, don't worry about this...  *

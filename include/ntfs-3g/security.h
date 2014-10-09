@@ -4,7 +4,7 @@
  *
  * Copyright (c) 2004      Anton Altaparmakov
  * Copyright (c) 2005-2006 Szabolcs Szakacsits
- * Copyright (c) 2007-2008 Jean-Pierre Andre
+ * Copyright (c) 2007-2010 Jean-Pierre Andre
  *
  * This program/include file is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as published
@@ -33,6 +33,9 @@
 #ifndef POSIXACLS
 #define POSIXACLS 0
 #endif
+
+typedef u16 be16;
+typedef u32 be32;
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define const_cpu_to_be16(x) ((((x) & 255L) << 8) + (((x) >> 8) & 255L))
@@ -82,6 +85,7 @@ struct CACHED_PERMISSIONS_LEGACY {
 	struct CACHED_PERMISSIONS_LEGACY *previous;
 	void *variable;
 	size_t varsize;
+	union ALIGNMENT payload[0];
 		/* above fields must match "struct CACHED_GENERIC" */
 	u64 mft_no;
 	struct CACHED_PERMISSIONS perm;
@@ -96,6 +100,7 @@ struct CACHED_SECURID {
 	struct CACHED_SECURID *previous;
 	void *variable;
 	size_t varsize;
+	union ALIGNMENT payload[0];
 		/* above fields must match "struct CACHED_GENERIC" */
 	uid_t uid;
 	gid_t gid;
@@ -132,6 +137,7 @@ struct PERMISSIONS_CACHE {
 enum {
 	SECURITY_DEFAULT,	/* rely on fuse for permissions checking */
 	SECURITY_RAW,		/* force same ownership/permissions on files */
+	SECURITY_ACL,		/* enable Posix ACLs (when compiled in) */
 	SECURITY_ADDSECURIDS,	/* upgrade old security descriptors */
 	SECURITY_STATICGRPS,	/* use static groups for access control */
 	SECURITY_WANTED		/* a security related option was present */
@@ -163,14 +169,14 @@ struct POSIX_ACE {
 	u16 tag;
 	u16 perms;
 	s32 id;   
-} ;
+} __attribute__((__packed__));
         
 struct POSIX_ACL {
 	u8 version;
 	u8 flags;
 	u16 filler;
 	struct POSIX_ACE ace[0];
-} ;
+} __attribute__((__packed__));
 
 struct POSIX_SECURITY {
 	mode_t mode;
@@ -178,6 +184,7 @@ struct POSIX_SECURITY {
 	int defcnt;
 	int firstdef;
 	u16 tagsset;
+	s32 alignment[0];
 	struct POSIX_ACL acl;
 } ;
         
@@ -240,13 +247,16 @@ extern int ntfs_sd_add_everyone(ntfs_inode *ni);
 extern le32 ntfs_security_hash(const SECURITY_DESCRIPTOR_RELATIVE *sd, 
 			       const u32 len);
 
-int ntfs_build_mapping(struct SECURITY_CONTEXT *scx, const char *usermap_path);
+int ntfs_build_mapping(struct SECURITY_CONTEXT *scx, const char *usermap_path,
+		BOOL allowdef);
 int ntfs_get_owner_mode(struct SECURITY_CONTEXT *scx,
 		ntfs_inode *ni, struct stat*);
 int ntfs_set_mode(struct SECURITY_CONTEXT *scx, ntfs_inode *ni, mode_t mode);
 BOOL ntfs_allowed_as_owner(struct SECURITY_CONTEXT *scx, ntfs_inode *ni);
 int ntfs_allowed_access(struct SECURITY_CONTEXT *scx,
 		ntfs_inode *ni, int accesstype);
+int ntfs_allowed_create(struct SECURITY_CONTEXT *scx,
+		ntfs_inode *ni, gid_t *pgid, mode_t *pdsetgid);
 BOOL old_ntfs_allowed_dir_access(struct SECURITY_CONTEXT *scx,
 		const char *path, int accesstype);
 
@@ -342,7 +352,7 @@ INDEX_ENTRY *ntfs_read_sii(struct SECURITY_API *scapi,
 INDEX_ENTRY *ntfs_read_sdh(struct SECURITY_API *scapi,
 		INDEX_ENTRY *entry);
 struct SECURITY_API *ntfs_initialize_file_security(const char *device,
-                                int flags);
+                                unsigned long flags);
 BOOL ntfs_leave_file_security(struct SECURITY_API *scx);
 
 int ntfs_get_usid(struct SECURITY_API *scapi, uid_t uid, char *buf);

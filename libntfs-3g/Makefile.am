@@ -10,12 +10,9 @@ noinst_LTLIBRARIES = libntfs-3g.la
 endif
 
 libntfs_3g_la_CFLAGS  = $(AM_CFLAGS) -I$(top_srcdir)/include/ntfs-3g
-
+libntfs_3g_la_CPPFLAGS= $(AM_CPPFLAGS) $(LIBNTFS_CPPFLAGS)
+libntfs_3g_la_LIBADD  = $(LIBNTFS_LIBS)
 libntfs_3g_la_LDFLAGS = -version-info $(LIBNTFS_3G_VERSION) -no-undefined
-
-if FUSE_INTERNAL
-libntfs_3g_la_LIBADD  = $(top_builddir)/libfuse-lite/libfuse-lite.la
-endif
 
 libntfs_3g_la_SOURCES =	\
 	acls.c 	\
@@ -40,11 +37,13 @@ libntfs_3g_la_SOURCES =	\
 	misc.c 		\
 	mst.c 		\
 	object_id.c 	\
+	realpath.c	\
 	reparse.c 	\
 	runlist.c 	\
 	security.c 	\
 	unistr.c 	\
-	volume.c
+	volume.c 	\
+	xattrs.c
 
 if NTFS_DEVICE_DEFAULT_IO_OPS
 if WINDOWS
@@ -75,5 +74,9 @@ endif
 uninstall-local:
 if INSTALL_LIBRARY
 	$(RM) -f "$(DESTDIR)/$(rootlibdir)"/libntfs-3g.so*
+endif
+
+if ENABLE_NTFSPROGS
+libs:	$(lib_LTLIBRARIES)
 endif
 

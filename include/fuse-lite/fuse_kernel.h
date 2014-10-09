@@ -36,10 +36,7 @@
 */
 
 #ifndef linux
-#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-
 #define __u64 uint64_t
 #define __u32 uint32_t
 #define __s32 int32_t
@@ -133,12 +130,13 @@ struct fuse_file_lock {
 
 /**
  * INIT request/reply flags
+ * FUSE_BIG_WRITES: allow big writes to be issued to the file system
  * FUSE_DONT_MASK: don't apply umask to file mode on create operations
  */
 #define FUSE_ASYNC_READ		(1 << 0)
 #define FUSE_POSIX_LOCKS	(1 << 1)
-#define FUSE_DONT_MASK		(1 << 6)
 #define FUSE_BIG_WRITES		(1 << 5)
+#define FUSE_DONT_MASK		(1 << 6)
 
 /**
  * Release flags

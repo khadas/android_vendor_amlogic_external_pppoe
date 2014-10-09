@@ -18,17 +18,11 @@
 
 #include <utime.h>
 #include <fcntl.h>
-#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
-
 #include <sys/stat.h>
-
 #if HAVE_SYS_STATVFS_H
-
-#include <sys/statfs.h>
+#include <sys/statvfs.h>
 #endif
-
 #include <sys/uio.h>
 
 #ifdef __cplusplus
@@ -960,10 +954,9 @@ int fuse_reply_iov(fuse_req_t req, const struct iovec *iov, int count);
  * @param stbuf filesystem statistics
  * @return zero for success, -errno for failure to send reply
  */
-#if HAVE_SYS_STATVFS_H 
-int fuse_reply_statfs(fuse_req_t req, const struct statfs *stbuf);
+#if HAVE_SYS_STATVFS_H
+int fuse_reply_statfs(fuse_req_t req, const struct statvfs *stbuf);
 #endif
-
 
 /**
  * Reply with needed buffer size
@@ -1089,6 +1082,13 @@ int fuse_req_interrupted(fuse_req_t req);
 /* ----------------------------------------------------------- *
  * Filesystem setup					       *
  * ----------------------------------------------------------- */
+
+#ifdef __SOLARIS__
+
+/* Deprecated, don't use */
+int fuse_lowlevel_is_lib_option(const char *opt);
+
+#endif /* __SOLARIS__ */
 
 /**
  * Create a low level session
