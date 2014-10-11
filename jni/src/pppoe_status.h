@@ -14,8 +14,8 @@
 extern "C" {
 #endif
 
-int get_pppoe_status( const char *ether_if_name);
-
+int get_net_updown(const char *phy_if_name);
+int get_pppoe_status(const char *phy_if_name);
 
 #ifdef __cplusplus
 }

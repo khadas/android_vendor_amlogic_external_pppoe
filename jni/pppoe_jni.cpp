@@ -44,6 +44,7 @@ struct fields_t {
 
 static struct fields_t fields;
 
+extern int get_eth0_updown();
 extern int get_pppoe_status( const char *phy_if_name);
 
 static char pppoe_connect_cmd[PPPOE_CONNECT_CMD_LEN_MAX];
@@ -228,6 +229,21 @@ jboolean com_amlogic_PppoeOperation_terminate
     return 1;
 }
 
+jint com_amlogic_PppoeOperation_isNetAdded
+(JNIEnv *env, jobject obj, jstring jstr_if_name)
+{
+    char *p_ifname;
+    int status;
+
+    __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.isNetAdded\n");
+    
+    p_ifname = (char *)env->GetStringUTFChars(jstr_if_name, NULL);
+    status = get_net_updown(p_ifname);
+    
+    env->ReleaseStringUTFChars(jstr_if_name, p_ifname);
+
+    return status;
+}
 
 jint com_amlogic_PppoeOperation_status
 (JNIEnv *env, jobject obj, jstring jstr_if_name)
@@ -248,9 +264,10 @@ jint com_amlogic_PppoeOperation_status
 
 static JNINativeMethod gPppoeJNIMethods[] = {
     /* name, signature, funcPtr */
-    { "connect",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z", (void*) com_amlogic_PppoeOperation_connect },
-    { "disconnect",    "()Z", (void*) com_amlogic_PppoeOperation_disconnect },
-    { "terminate",     "()Z", (void*) com_amlogic_PppoeOperation_terminate },
+    { "_connect",       "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z", (void*) com_amlogic_PppoeOperation_connect },
+    { "_disconnect",    "()Z", (void*) com_amlogic_PppoeOperation_disconnect },
+    { "_terminate",     "()Z", (void*) com_amlogic_PppoeOperation_terminate },
+    { "isNetAdded",     "(Ljava/lang/String;)I", (void*) com_amlogic_PppoeOperation_isNetAdded },
     { "status",       "(Ljava/lang/String;)I", (void*) com_amlogic_PppoeOperation_status },
 };
 
