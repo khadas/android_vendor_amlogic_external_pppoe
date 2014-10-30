@@ -24,6 +24,8 @@
 #include <sys/un.h>
 
 #include <android/log.h>
+#include <netutils/ifc.h>
+
 #include <netwrapper.h>
 
 #include "pppoe_status.h"
@@ -119,6 +121,14 @@ static int pppoe_terminate_handler(char *request)
 
 static int pppoe_connect_handler(char *request)
 {
+    if (strstr(request, "eth0")) {
+        __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
+            "FIXME!!! SHOULD NOT clear eth0 ip address. Reference to bug#98924.\n");
+        ifc_init();
+        ifc_set_addr("eth0",0);
+        ifc_close();
+    }
+
     return system(request);
 }
 
