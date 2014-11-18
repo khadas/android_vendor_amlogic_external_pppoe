@@ -26,11 +26,22 @@
 #include <android/log.h>
 #include <netutils/ifc.h>
 
+#include <linux/if.h>
+#include <linux/sockios.h>
+
 #include <netwrapper.h>
 
 #include "pppoe_status.h"
 
+#define PPP_IF_NAME "ppp0"
+
 #define LOCAL_TAG "PPPOE_WRAPPER"
+
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, __VA_ARGS__)
+
+static int pppoe_status = PPP_STATUS_DISCONNECTED;
+static char phy_if_name[IFNAMSIZ + 1] = "unknown";
 
 static pid_t read_pid(const char *pidfile)
 {
@@ -76,6 +87,7 @@ static int pppoe_disconnect_handler(char *request)
         return -1;
     }
 
+    pppoe_status = PPP_STATUS_DISCONNECTING;
     /*
     The signals SIGKILL and SIGSTOP cannot 
     be caught, blocked, or ignored.
@@ -102,6 +114,8 @@ static int pppoe_disconnect_handler(char *request)
     __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
         "removed %s\n", PPPOE_PIDFILE );
 
+    pppoe_status = PPP_STATUS_DISCONNECTED;
+
     return 0;    
 }
 
@@ -121,6 +135,21 @@ static int pppoe_terminate_handler(char *request)
 
 static int pppoe_connect_handler(char *request)
 {
+    char *phy_if,*pSpace;
+    strcpy(phy_if_name, "unkown");
+
+    phy_if = strstr(request, " -I ");
+    if (phy_if) {
+        phy_if += strlen(" -I ");
+        pSpace = strchr(phy_if, ' ');
+        if (pSpace && pSpace - phy_if < IFNAMSIZ) {
+            strncpy(phy_if_name, phy_if, pSpace - phy_if);
+            phy_if_name[pSpace - phy_if]='\0';
+        }
+    }
+
+    LOGI("Physical interface: %s\n", phy_if_name);
+
     if (strstr(request, "eth0")) {
         __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,
             "FIXME!!! SHOULD NOT clear eth0 ip address. Reference to bug#98924.\n");
@@ -129,7 +158,84 @@ static int pppoe_connect_handler(char *request)
         ifc_close();
     }
 
+    pppoe_status = PPP_STATUS_CONNECTING;
+
     return system(request);
+}
+
+
+static int get_interface_state(const char *if_name)
+{
+    struct ifreq ifr;
+    int s, ret;
+
+    strlcpy(ifr.ifr_name, if_name, IFNAMSIZ);
+
+    s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s < 0) {
+        LOGE("if_is_up(%s): failed to create socket(%s)\n", if_name, strerror(errno));
+
+        return -1;
+    }
+    ret = ioctl(s, SIOCGIFFLAGS, &ifr);
+    if (ret < 0) {
+        ret = -errno;
+        LOGE("if_is_up(%s): failed to ioctl(%s)\n", if_name, strerror(errno));
+        goto done;
+    }
+
+    ret = (ifr.ifr_flags &= IFF_UP) ? 1 : 0;
+    LOGI("%s is %s\n", if_name, ret ? "UP" : "DOWN");
+
+done:
+    close(s);
+    return ret;
+}
+
+
+static int pppoe_status_handler(char *request)
+{
+    int ret;
+
+    ret = get_interface_state(phy_if_name);
+    if (ret < 0){
+        if (ENODEV == -ret)
+            LOGE("physical interface %s not found\n", phy_if_name);
+
+        LOGI("DISCONNECTED\n");
+
+        return PPP_STATUS_DISCONNECTED;
+    }
+
+    if (0 == ret) {
+        LOGI("physical interface %s is DOWN\n", phy_if_name);
+        LOGI("DISCONNECTED\n");
+        return PPP_STATUS_DISCONNECTED;
+    }
+
+    if (pppoe_status == PPP_STATUS_CONNECTING) {
+    ret = get_interface_state(PPP_IF_NAME);
+    if (ret < 0){
+        if (ENODEV == -ret)
+            LOGI("wait to create interface %s...\n", PPP_IF_NAME);
+
+        return PPP_STATUS_CONNECTING;
+    }
+
+    if (0 == ret) {
+        LOGI("waiting interface %s up\n", PPP_IF_NAME);
+        LOGI("CONNECTING\n");
+        return PPP_STATUS_CONNECTING;
+    }
+    else {
+        LOGI("interface %s has up\n", PPP_IF_NAME);
+        LOGI("CONNECTED\n");
+        pppoe_status = PPP_STATUS_CONNECTED;
+        return pppoe_status;
+    }
+    }
+
+    return pppoe_status;
 }
 
 
@@ -137,6 +243,7 @@ int main(int argc, char* argv[])
 {
     netwrapper_register_handler("ppp-stop", pppoe_disconnect_handler);
     netwrapper_register_handler("ppp-terminate", pppoe_terminate_handler);
+    netwrapper_register_handler("ppp-status", pppoe_status_handler);
     netwrapper_register_handler("pppd pty", pppoe_connect_handler);
     netwrapper_main(PPPOE_WRAPPER_SERVER_PATH);
 

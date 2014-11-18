@@ -4,6 +4,7 @@
 #define PPP_STATUS_CONNECTED  0x10
 #define PPP_STATUS_DISCONNECTED  0x20
 #define PPP_STATUS_CONNECTING  0x40
+#define PPP_STATUS_DISCONNECTING  0x80
 
 #include "../../../ppp/pppd/pathnames.h"
 #define PPPOE_PIDFILE _ROOT_PATH "/etc/ppp/pppoe.pid"
