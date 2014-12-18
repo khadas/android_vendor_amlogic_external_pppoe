@@ -32,6 +32,9 @@
 #endif
 
 #include "types.h"
+#ifdef ANDROID
+#include <cutils/log.h>
+#endif
 
 /* Function prototype for the logging handlers */
 typedef int (ntfs_log_handler)(const char *function, const char *file, int line,
@@ -86,10 +89,10 @@ int ntfs_log_redirect(const char *function, const char *file, int line,
 #define NTFS_LOG_FLAG_LINE	(1 << 2) /* Show the line number of the message */
 #define NTFS_LOG_FLAG_FUNCTION	(1 << 3) /* Show the function name containing the message */
 #define NTFS_LOG_FLAG_ONLYNAME	(1 << 4) /* Only display the filename, not the pathname */
-
 /* Macros to simplify logging.  One for each level defined above.
  * Note, ntfs_log_debug/trace have effect only if DEBUG is defined.
  */
+#ifndef ANDROID
 #define ntfs_log_critical(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_CRITICAL,NULL,FORMAT,##ARGS)
 #define ntfs_log_error(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_ERROR,NULL,FORMAT,##ARGS)
 #define ntfs_log_info(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_INFO,NULL,FORMAT,##ARGS)
@@ -98,15 +101,32 @@ int ntfs_log_redirect(const char *function, const char *file, int line,
 #define ntfs_log_quiet(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_QUIET,NULL,FORMAT,##ARGS)
 #define ntfs_log_verbose(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_VERBOSE,NULL,FORMAT,##ARGS)
 #define ntfs_log_warning(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_WARNING,NULL,FORMAT,##ARGS)
+#else
+#define ntfs_log_critical(FORMAT, ARGS...) SLOGE(FORMAT,##ARGS)
+#define ntfs_log_error(FORMAT, ARGS...) SLOGE(FORMAT,##ARGS)
+#define ntfs_log_info(FORMAT, ARGS...) SLOGI(FORMAT,##ARGS)
+#define ntfs_log_perror(FORMAT, ARGS...) SLOGE(FORMAT,##ARGS)
+#define ntfs_log_progress(FORMAT, ARGS...) SLOGI(FORMAT,##ARGS)
+#define ntfs_log_quiet(FORMAT, ARGS...) SLOGI(FORMAT,##ARGS)
+#define ntfs_log_verbose(FORMAT, ARGS...) SLOGV(FORMAT,##ARGS)
+#define ntfs_log_warning(FORMAT, ARGS...) SLOGW(FORMAT,##ARGS)
+#endif
 
 /* By default debug and trace messages are compiled into the program,
  * but not displayed.
  */
 #ifdef DEBUG
+#ifdef ANDROID
+#define ntfs_log_debug(FORMAT, ARGS...) SLOGD(FORMAT,##ARGS)
+#define ntfs_log_trace(FORMAT, ARGS...) SLOGV(FORMAT,##ARGS)
+#define ntfs_log_enter(FORMAT, ARGS...) SLOGV(FORMAT,##ARGS)
+#define ntfs_log_leave(FORMAT, ARGS...) SLOGV(FORMAT,##ARGS)
+#else
 #define ntfs_log_debug(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_DEBUG,NULL,FORMAT,##ARGS)
 #define ntfs_log_trace(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_TRACE,NULL,FORMAT,##ARGS)
 #define ntfs_log_enter(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_ENTER,NULL,FORMAT,##ARGS)
 #define ntfs_log_leave(FORMAT, ARGS...) ntfs_log_redirect(__FUNCTION__,__FILE__,__LINE__,NTFS_LOG_LEVEL_LEAVE,NULL,FORMAT,##ARGS)
+#endif
 #else
 #define ntfs_log_debug(FORMAT, ARGS...)do {} while (0)
 #define ntfs_log_trace(FORMAT, ARGS...)do {} while (0)

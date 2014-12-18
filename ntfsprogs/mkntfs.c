@@ -145,6 +145,10 @@
 #define basename(name) name
 #endif
 
+#ifdef ANDROID
+#define LOG_TAG "mkntfs"
+#endif
+
 typedef enum { WRITE_STANDARD, WRITE_BITMAP, WRITE_LOGFILE } WRITE_TYPE;
 
 #ifdef NO_NTFS_DEVICE_DEFAULT_IO_OPS

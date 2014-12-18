@@ -86,6 +86,10 @@ You need to run ./configure without the --disable-default-device-io-ops \
 switch if you want to be able to build the NTFS utilities."
 #endif
 
+#ifdef ANDROID
+#define LOG_TAG "Ntfsfix"
+#endif
+
 static const char *EXEC_NAME = "ntfsfix";
 static const char OK[]       = "OK\n";
 static const char FAILED[]   = "FAILED\n";

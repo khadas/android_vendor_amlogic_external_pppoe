@@ -126,6 +126,10 @@
 
 #define set_archive(ni) (ni)->flags |= FILE_ATTR_ARCHIVE
 
+#ifdef ANDROID
+#define LOG_TAG "Ntfs-3g"
+#endif
+
 typedef enum {
 	FSTYPE_NONE,
 	FSTYPE_UNKNOWN,

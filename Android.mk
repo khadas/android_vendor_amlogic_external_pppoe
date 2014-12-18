@@ -1,7 +1,7 @@
 ifneq ($(TARGET_SIMULATOR), true)
 
 LOCAL_PATH := $(call my-dir)
-MY_CFLAG:=  -O2 -g -W -Wall -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64   -DHAVE_CONFIG_H
+MY_CFLAG:=  -O2 -g -W -Wall -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DHAVE_CONFIG_H -DANDROID
 ###################################################################
 ## For stage1, we have to make  libfuse
 ###################################################################
