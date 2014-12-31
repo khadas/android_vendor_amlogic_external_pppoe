@@ -45,7 +45,8 @@ static char const RCSID[] =
 #include <sys/types.h>
 #include <pwd.h>
 
-#include "../../ppp/pppd/pathnames.h"
+//#ifndef _ROOT_PATH
+#define _ROOT_PATH "/data/misc"
 /* Are we running SUID or SGID? */
 int IsSetID = 0;
 

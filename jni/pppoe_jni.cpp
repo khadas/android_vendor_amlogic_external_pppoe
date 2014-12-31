@@ -21,7 +21,7 @@ dalvik/libnativehelper/include/nativehelper/jni.h
 #include <netinet/in.h>
 
 #include <sys/un.h>
-#include <netwrapper.h> 
+#include "netwrapper.h"
 #include "pppoe_status.h"
 #include <android/log.h>
 
@@ -44,12 +44,13 @@ struct fields_t {
 
 static struct fields_t fields;
 
+extern int get_eth0_updown();
+extern int get_pppoe_status( const char *phy_if_name);
 
 static char pppoe_connect_cmd[PPPOE_CONNECT_CMD_LEN_MAX];
 
 static char pppoe_disconnect_cmd[512] = "ppp-stop";
 static char pppoe_terminate_cmd[512] = "ppp-terminate";
-static char pppoe_status_cmd[512] = "ppp-status";
 
 static char pppoe_plugin_cmd[PPPOE_PLUGIN_CMD_LEN_MAX];
 
@@ -86,7 +87,8 @@ static char* create_pppoe_connect_cmd
     return pppoe_connect_cmd;
 }
 
-#include "../../ppp/pppd/pathnames.h"
+//#ifndef _ROOT_PATH
+#define _ROOT_PATH "/data/misc"
 #define CONFIG_FILE  _ROOT_PATH "/etc/ppp/pppd_options.conf"
 
 
@@ -238,7 +240,7 @@ jint com_amlogic_PppoeOperation_isNetAdded
     
     p_ifname = (char *)env->GetStringUTFChars(jstr_if_name, NULL);
     status = get_net_updown(p_ifname);
-    
+
     env->ReleaseStringUTFChars(jstr_if_name, p_ifname);
 
     return status;
@@ -247,20 +249,15 @@ jint com_amlogic_PppoeOperation_isNetAdded
 jint com_amlogic_PppoeOperation_status
 (JNIEnv *env, jobject obj, jstring jstr_if_name)
 {
+    char *p_ifname;
     int status;
-    struct netwrapper_ctrl * ctrl;
 
     __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"ppp.status\n");
 
-    ctrl = netwrapper_ctrl_open(PPPOE_WRAPPER_CLIENT_PATH, PPPOE_WRAPPER_SERVER_PATH);
-    if (ctrl == NULL) {
-        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "Failed to connect to pppd\n");
-        return -1;
-    }
+    p_ifname = (char *)env->GetStringUTFChars(jstr_if_name, NULL);
+    status = get_pppoe_status(p_ifname);
 
-    status = netwrapper_ctrl_request(ctrl, pppoe_status_cmd, strlen(pppoe_status_cmd));
-
-    netwrapper_ctrl_close(ctrl);
+    env->ReleaseStringUTFChars(jstr_if_name, p_ifname);
 
     return status;
 }

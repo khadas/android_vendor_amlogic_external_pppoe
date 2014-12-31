@@ -12,7 +12,7 @@
 #include <netinet/in.h>
 
 #include <sys/un.h>
-#include <netwrapper.h> 
+#include "netwrapper.h"
 
 #include "pppoe_status.h"
 

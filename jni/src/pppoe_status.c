@@ -57,7 +57,7 @@ done:
 int get_net_updown(const char *phy_if_name)
 {
     int ret;
-    
+
     ret = if_is_up(phy_if_name);
     if(ret < 0){
         if(ENODEV == -ret)
@@ -66,12 +66,72 @@ int get_net_updown(const char *phy_if_name)
     }
 
     if(0 == ret) {
-        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "%s is DOWN\n", phy_if_name);        
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "%s is DOWN\n", phy_if_name);
         return 0;
     }
     else {
-        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "%s is UP\n", phy_if_name);        
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG, "%s is UP\n", phy_if_name);
         return 1;
     }
 }
 
+int get_pppoe_status(const char *phy_if_name)
+{
+    int ret;
+
+    ret = if_is_up(phy_if_name);
+    if (ret < 0) {
+        if (ENODEV == -ret)
+            PRINTF("No such device(%s)\n", phy_if_name);
+
+        PRINTF("ppp_status: DISCONNECTED\n");
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
+                            "ppp_status: DISCONNECTED\n");
+
+        return PPP_STATUS_DISCONNECTED;
+    }
+
+    if (0 == ret) {
+        PRINTF("%s is DOWN\n", phy_if_name);
+
+        PRINTF("ppp_status: DISCONNECTED\n");
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
+                            "ppp_status: DISCONNECTED\n");
+        return PPP_STATUS_DISCONNECTED;
+    }
+
+    ret = if_is_up(PPP_IF_NAME);
+    if (ret < 0) {
+        if (ENODEV == -ret)
+            PRINTF("No such device(%s)\n", PPP_IF_NAME);
+
+        PRINTF("ppp_status: DISCONNECTED\n");
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
+                            "ppp_status: DISCONNECTED\n");
+        return PPP_STATUS_DISCONNECTED;
+    }
+
+    if (0 == ret) {
+        PRINTF("ppp_status: CONNECTING\n");
+
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
+                            "ppp_status: CONNECTING\n");
+        return PPP_STATUS_CONNECTING;
+    }
+    else {
+        PRINTF("ppp_status: CONNECTED\n");
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
+                            "ppp_status: CONNECTED\n");
+        return PPP_STATUS_CONNECTED;
+    }
+}
+
+/*
+int
+main(int argc, char **argv)
+{
+    get_pppoe_status(( 1 == argc ) ? "eth0" : argv[1]);
+
+    return 0;
+}
+*/
