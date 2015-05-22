@@ -28,7 +28,7 @@ LOCAL_SRC_FILES := jni/src/pppoe.c \
                    jni/src/ppp.c \
                    jni/src/discovery.c \
                    jni/src/netwrapper.c
-LOCAL_C_INCLUDES := $(KERNEL_HEADERS)
+#LOCAL_C_INCLUDES := $(KERNEL_HEADERS)
 LOCAL_SHARED_LIBRARIES := libcutils
 LOCAL_MODULE = pppoe
 LOCAL_MODULE_TAGS := optional
