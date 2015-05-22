@@ -68,7 +68,7 @@
 #define DEV_FD(dev)	(*(int *)dev->d_private)
 
 #ifdef __USE_FILE_OFFSET64
-#define  fcntl  __fcntl64
+//#define  fcntl  __fcntl64
 #endif
 
 /* Define to nothing if not present on this system. */
