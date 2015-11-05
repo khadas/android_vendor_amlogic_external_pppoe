@@ -45,8 +45,6 @@
 #include <android/log.h>
 
 #include "netwrapper.h"
-#include "init.h"
-#include "util.h"
 
 #define LOCAL_TAG "NETWRAPPER"
 
