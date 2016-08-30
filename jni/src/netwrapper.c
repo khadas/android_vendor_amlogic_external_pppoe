@@ -38,7 +38,7 @@
 #include <sys/un.h>
 
 #include <selinux/label.h>
-#include <selinux/android.h>
+//#include <selinux/label_internal.h>
 
 #include <cutils/sockets.h>
 
@@ -80,7 +80,7 @@ struct netwrapper_ctrl * netwrapper_ctrl_open
         int tries = 0;
         struct stat buf;
         uid_t uid,euid;
-        sehandle = selinux_android_file_context_handle();
+        //sehandle = selinux_android_file_context_handle();
         ctrl = malloc(sizeof(*ctrl));
         if (ctrl == NULL)
                 return NULL;
@@ -263,7 +263,7 @@ int netwrapper_main(const char *server_path)
         int i, len, clilen = 0;
         int ret;
         char *filecon;
-        sehandle = selinux_android_file_context_handle();
+        //sehandle = selinux_android_file_context_handle();
         socket_fd = socket(PF_UNIX, SOCK_DGRAM, 0);
         if (socket_fd < 0) {
             __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
