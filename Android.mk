@@ -29,10 +29,10 @@ LOCAL_SRC_FILES := jni/src/pppoe.c \
                    jni/src/discovery.c \
                    jni/src/netwrapper.c
 #LOCAL_C_INCLUDES := $(KERNEL_HEADERS)
-LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
+#LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 
-LOCAL_SHARED_LIBRARIES := libcutils
+LOCAL_SHARED_LIBRARIES := libcutils libselinux
 LOCAL_MODULE = pppoe
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS := -DVERSION=$(PPPOE_VERSION)
@@ -53,7 +53,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_SHARED_LIBRARIES += libandroid_runtime   libnativehelper
 LOCAL_SHARED_LIBRARIES += libc libcutils libnetutils
 LOCAL_C_INCLUDES :=  $(JNI_H_INCLUDE) $(LOCAL_PATH)/jni/src
-LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
+#LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libpppoejni
@@ -66,7 +66,7 @@ LOCAL_SRC_FILES:= jni/src/pppoe_cli.c \
         jni/src/common.c \
         jni/src/netwrapper.c
 
-LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
+#LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 
 LOCAL_MODULE_TAGS := optional
@@ -85,7 +85,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_C_INCLUDES := \
         $(LOCAL_PATH)/include
 
-LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
+#LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 
 LOCAL_CFLAGS := -DANDROID_CHANGES

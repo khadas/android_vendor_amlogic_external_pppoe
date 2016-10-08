@@ -37,8 +37,10 @@
 #include <cutils/properties.h>
 #include <sys/un.h>
 
-#include <selinux/label.h>
 //#include <selinux/label_internal.h>
+#include <selinux/selinux.h>
+#include <selinux/label.h>
+#include <selinux/android.h>
 
 #include <cutils/sockets.h>
 
@@ -80,7 +82,7 @@ struct netwrapper_ctrl * netwrapper_ctrl_open
         int tries = 0;
         struct stat buf;
         uid_t uid,euid;
-        //sehandle = selinux_android_file_context_handle();
+        sehandle = selinux_android_file_context_handle();
         ctrl = malloc(sizeof(*ctrl));
         if (ctrl == NULL)
                 return NULL;
@@ -88,8 +90,8 @@ struct netwrapper_ctrl * netwrapper_ctrl_open
 
         ctrl->s = socket(PF_UNIX, SOCK_DGRAM, 0);
         if (ctrl->s < 0) {
-                free(ctrl);
-                return NULL;
+            free(ctrl);
+            return NULL;
         }
         ctrl->local.sun_family = AF_UNIX;
 
@@ -104,11 +106,11 @@ try_again:
         tries++;
         ret = unlink(ctrl->local.sun_path);
         if (ret != 0 && errno != ENOENT) {
-                __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"Failed to unlink old socket : %s\n",strerror(errno));
+                __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"Failed to unlink old socket : %s\n",strerror(errno));
         }
         filecon = NULL;
         if (0 == stat(ctrl->local.sun_path , &buf))
-                __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"stat sun path filed");
+            __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"stat sun path filed");
         if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
                 sizeof(ctrl->local)) < 0) {
                 if (errno == EADDRINUSE && tries < 2) {
@@ -135,7 +137,7 @@ try_again:
                 free(ctrl);
                 return NULL;
         }
-        __android_log_print(ANDROID_LOG_INFO, LOCAL_TAG,"%s: error: %d\n", __FUNCTION__, chmod(ctrl->dest.sun_path, 0x777));
+        __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,"%s: error: %d sun_path: %s\n", __FUNCTION__, chmod(ctrl->dest.sun_path, 0x777), ctrl->dest.sun_path);
         if (connect(ctrl->s, (struct sockaddr *) &ctrl->dest,
                     sizeof(ctrl->dest)) < 0) {
                 close(ctrl->s);
@@ -263,7 +265,7 @@ int netwrapper_main(const char *server_path)
         int i, len, clilen = 0;
         int ret;
         char *filecon;
-        //sehandle = selinux_android_file_context_handle();
+        sehandle = selinux_android_file_context_handle();
         socket_fd = socket(PF_UNIX, SOCK_DGRAM, 0);
         if (socket_fd < 0) {
             __android_log_print(ANDROID_LOG_ERROR, LOCAL_TAG,
