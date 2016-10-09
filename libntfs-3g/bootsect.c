@@ -38,6 +38,7 @@
 #include <errno.h>
 #endif
 
+#include <strings.h>
 #include "compat.h"
 #include "bootsect.h"
 #include "debug.h"

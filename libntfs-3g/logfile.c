@@ -35,6 +35,7 @@
 #include <errno.h>
 #endif
 
+#include <strings.h>
 #include "attrib.h"
 #include "debug.h"
 #include "logfile.h"

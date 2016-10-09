@@ -58,6 +58,7 @@
 #include <sys/mnttab.h>
 #endif
 
+#include <strings.h>
 #include "param.h"
 #include "compat.h"
 #include "volume.h"
@@ -74,6 +75,8 @@
 #include "cache.h"
 #include "realpath.h"
 #include "misc.h"
+
+extern char *hasmntopt(const struct mntent *mnt, const char *opt);
 
 const char *ntfs_home = 
 "News, support and information:  http://tuxera.com\n";

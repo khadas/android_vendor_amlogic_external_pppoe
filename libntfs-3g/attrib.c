@@ -44,6 +44,7 @@
 #include <limits.h>
 #endif
 
+#include <strings.h>
 #include "param.h"
 #include "compat.h"
 #include "attrib.h"

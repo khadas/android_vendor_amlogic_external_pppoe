@@ -43,6 +43,7 @@
 #endif
 #include <time.h>
 
+#include <strings.h>
 #include "compat.h"
 #include "types.h"
 #include "device.h"

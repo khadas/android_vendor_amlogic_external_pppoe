@@ -72,6 +72,7 @@
 #include <uuid/uuid.h>
 #endif
 
+#include <strings.h>
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
