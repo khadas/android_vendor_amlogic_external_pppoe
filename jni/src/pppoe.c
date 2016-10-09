@@ -73,6 +73,9 @@ static char const RCSID[] =
 #include <linux/rtnetlink.h>  //for ifinfomsg
 #include <linux/netlink.h> //for nlmsghdr{}
 
+#include <sys/stat.h>
+#include <sys/file.h>
+
 #define NL_POLL_MSG_SZ   8*1024
 
 static int open_NETLINK_socket(int netlinkFamily, int groups)
