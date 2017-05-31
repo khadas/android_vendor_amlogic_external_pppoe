@@ -8,6 +8,11 @@ LOCAL_SRC_FILES := $(call all-subdir-java-files)
 LOCAL_JNI_SHARED_LIBRARIES := libpppoejni
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := droidlogic.external.pppoe
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_JAVA_LIBRARY)
 
 #MAKE_XML
@@ -15,7 +20,14 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := droidlogic.external.pppoe.xml
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := ETC
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/etc/permissions
+else
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)/permissions
+endif
+
 LOCAL_SRC_FILES := $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
@@ -36,6 +48,11 @@ LOCAL_SHARED_LIBRARIES := libcutils libselinux
 LOCAL_MODULE = pppoe
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS := -DVERSION=$(PPPOE_VERSION)
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
@@ -58,6 +75,11 @@ LOCAL_C_INCLUDES :=  $(JNI_H_INCLUDE) $(LOCAL_PATH)/jni/src
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libpppoejni
 LOCAL_PRELINK_MODULE := false
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_SHARED_LIBRARY)
 
 
@@ -72,6 +94,11 @@ LOCAL_SRC_FILES:= jni/src/pppoe_cli.c \
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := pcli
 LOCAL_SHARED_LIBRARIES := libcutils libnetutils libselinux
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
@@ -92,6 +119,10 @@ LOCAL_CFLAGS := -DANDROID_CHANGES
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE:= pppoe_wrapper
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
 
 include $(BUILD_EXECUTABLE)
 
