@@ -26,7 +26,7 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := libfuse
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -74,7 +74,7 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := libntfs-3g
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -96,7 +96,7 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := ntfs-3g
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES := libfuse libntfs-3g
 
 include $(BUILD_EXECUTABLE)
@@ -144,7 +144,7 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := mkntfs
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES:= libntfs-3g libfuse
 
 include $(BUILD_EXECUTABLE)
@@ -167,7 +167,7 @@ LOCAL_CFLAGS := $(MY_CFLAG)
 
 LOCAL_MODULE := ntfsfix
 LOCAL_MODULE_TAGS := optional
-LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils
+LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES:= libntfs-3g libfuse
 
 include $(BUILD_EXECUTABLE)
