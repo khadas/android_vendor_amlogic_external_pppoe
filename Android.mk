@@ -17,7 +17,7 @@ include $(BUILD_JAVA_LIBRARY)
 
 #MAKE_XML
 include $(CLEAR_VARS)
-LOCAL_MODULE := droidlogic.external.pppoe.xml
+LOCAL_MODULE := droidlogic.software.pppoe.xml
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := ETC
 
@@ -44,7 +44,7 @@ LOCAL_SRC_FILES := jni/src/pppoe.c \
 #LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 
-LOCAL_SHARED_LIBRARIES := libcutils libselinux
+LOCAL_SHARED_LIBRARIES := liblog libcutils libselinux
 LOCAL_MODULE = pppoe
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS := -DVERSION=$(PPPOE_VERSION)
@@ -93,7 +93,7 @@ LOCAL_SRC_FILES:= jni/src/pppoe_cli.c \
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := pcli
-LOCAL_SHARED_LIBRARIES := libcutils libnetutils libselinux
+LOCAL_SHARED_LIBRARIES := liblog libcutils libnetutils libselinux
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
 LOCAL_PROPRIETARY_MODULE := true
@@ -107,7 +107,7 @@ LOCAL_SRC_FILES:= jni/src/pppoe_wrapper.c \
         jni/src/netwrapper.c
 
 LOCAL_SHARED_LIBRARIES := \
-        libcutils libcrypto libnetutils libselinux
+        liblog libcutils libcrypto libnetutils libselinux
 
 LOCAL_C_INCLUDES := \
         $(LOCAL_PATH)/include
