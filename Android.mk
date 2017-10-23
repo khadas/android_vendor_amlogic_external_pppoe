@@ -28,6 +28,10 @@ LOCAL_MODULE := libfuse
 LOCAL_MODULE_TAGS := optional
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_STATIC_LIBRARY)
 
 ###################################################################
@@ -76,6 +80,10 @@ LOCAL_MODULE := libntfs-3g
 LOCAL_MODULE_TAGS := optional
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_STATIC_LIBRARY)
 
 
@@ -98,6 +106,10 @@ LOCAL_MODULE := ntfs-3g
 LOCAL_MODULE_TAGS := optional
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES := libfuse libntfs-3g
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
 
 include $(BUILD_EXECUTABLE)
 
@@ -147,6 +159,10 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES:= libntfs-3g libfuse
 
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
+
 include $(BUILD_EXECUTABLE)
 
 ###################################################################
@@ -169,6 +185,10 @@ LOCAL_MODULE := ntfsfix
 LOCAL_MODULE_TAGS := optional
 LOCAL_SYSTEM_SHARED_LIBRARIES := libc libcutils liblog
 LOCAL_STATIC_LIBRARIES:= libntfs-3g libfuse
+
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26 && echo OK),OK)
+LOCAL_PROPRIETARY_MODULE := true
+endif
 
 include $(BUILD_EXECUTABLE)
 
