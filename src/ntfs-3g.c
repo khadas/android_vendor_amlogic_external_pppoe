@@ -37,6 +37,7 @@
 #error "***********************************************************"
 #endif
 
+#include <sys/sysmacros.h>
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
