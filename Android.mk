@@ -69,7 +69,10 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_SHARED_LIBRARIES += libandroid_runtime   libnativehelper
 LOCAL_SHARED_LIBRARIES += libc libcutils libnetutils
-LOCAL_C_INCLUDES :=  $(JNI_H_INCLUDE) $(LOCAL_PATH)/jni/src
+LOCAL_C_INCLUDES :=  $(JNI_H_INCLUDE) \
+    $(LOCAL_PATH)/jni/src \
+    libnativehelper/include/nativehelper
+
 #LOCAL_C_INCLUDES += external/selinux/libselinux/include/ \
                     external/selinux/libselinux/src
 LOCAL_MODULE_TAGS := optional
