@@ -446,6 +446,9 @@ static int do_mount(const char *mnt, char **typep, mode_t rootmode,
         const char *fsname_str = "fsname=";
         for (len = 0; s[len] && s[len] != ','; len++);
         if (begins_with(s, fsname_str)) {
+            if (strstr(s, "vold"))
+                for (len++; s[len] && s[len] != ','; len++);
+
             if (!get_string_opt(s, len, fsname_str, &fsname))
                 goto err;
         } else if (opt_eq(s, len, "blkdev")) {
@@ -518,7 +521,7 @@ static int do_mount(const char *mnt, char **typep, mode_t rootmode,
         sprintf(d, "fd=%i,rootmode=%o,user_id=%i", fd, rootmode, getuid());
         res = mount(source, mnt, type, flags, optbuf);
     }
-    
+
     if (drop_privs())
 	goto err;
     

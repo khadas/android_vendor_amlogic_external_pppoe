@@ -277,7 +277,15 @@ static int process_real_option_group(struct fuse_opt_context *ctx, char *opts)
         else
 #endif /* __SOLARIS__ */
             {
-            sep = strchr(opts, ',');
+
+            if (!strncmp(opts,"fsname=",7) && strstr(opts, "vold")) {
+                fprintf(stderr, "[%s,%d] opts=%s\n", __FUNCTION__, __LINE__, opts);
+                char *tmp = strchr(opts, ',');
+                sep = strchr(tmp+1, ',');
+            } else {
+                sep = strchr(opts, ',');
+            }
+
             if (sep)
                 *sep = '\0';
         }
